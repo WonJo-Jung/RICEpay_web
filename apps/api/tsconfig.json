@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "module": "CommonJS",
+    "experimentalDecorators": true, // legacy decorator 사용
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src"]
+}

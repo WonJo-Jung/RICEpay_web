@@ -1,0 +1,129 @@
+// schema.prisma
+// DEV-02: Base schema for RICE Pay (users, address_book, payments)
+// DB: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum KycStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum Chain {
+  ETHEREUM
+  POLYGON
+  BASE
+  SOLANA
+}
+
+enum Currency {
+  USD
+  RUSD
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  CONFIRMED
+  FAILED
+  CANCELED
+}
+
+enum PaymentMethod {
+  ONCHAIN
+  OFFCHAIN
+}
+
+// ---------- Models ----------
+model User {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  phoneE164     String?     @unique
+  passwordHash  String
+  firstName     String?
+  lastName      String?
+  country       String?     // ISO 3166-1 alpha-2 (e.g., "KR", "US")
+  status        UserStatus  @default(ACTIVE)
+  kycStatus     KycStatus   @default(NONE)
+  kycAt         DateTime?
+  lastLoginAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  addressBook   AddressBookEntry[]
+  paymentsSent  Payment[]   @relation("payments_sent")
+  paymentsRecv  Payment[]   @relation("payments_recv")
+
+  @@index([status])
+  @@index([kycStatus])
+}
+
+model AddressBookEntry {
+  id         String   @id @default(cuid())
+  ownerId    String
+  alias      String
+  address    String   // blockchain address (or identifier for OFFCHAIN)
+  chain      Chain
+  note       String?
+  isFavorite Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, address, chain])
+  @@index([ownerId, isFavorite])
+}
+
+model Payment {
+  id             String         @id @default(cuid())
+  payerId        String
+  payeeId        String?        // optional when sending to external address
+
+  payeeAddress   String?
+  chain          Chain?
+
+  currency       Currency
+  amountMinor    BigInt
+  feeMinor       BigInt         @default(0)
+
+  status         PaymentStatus  @default(PENDING)
+  method         PaymentMethod  @default(ONCHAIN)
+  requestedAt    DateTime       @default(now())
+  processedAt    DateTime?
+  confirmedAt    DateTime?
+
+  txHash         String?
+  tokenSymbol    String?
+  memo           String?
+
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  payer          User           @relation("payments_sent", fields: [payerId], references: [id], onDelete: Cascade)
+  payee          User?          @relation("payments_recv", fields: [payeeId], references: [id])
+
+  @@index([payerId, status, requestedAt])
+  @@index([payeeId, status, requestedAt])
+  @@index([txHash])
+  @@index([currency, requestedAt])
+}

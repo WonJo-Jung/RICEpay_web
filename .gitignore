@@ -1,0 +1,10 @@
+
+node_modules
+dist
+.build
+.next
+.expo
+.expo-shared
+.env*
+.DS_Store
+.turbo

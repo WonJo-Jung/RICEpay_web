@@ -1,0 +1,26 @@
+{
+  "name": "@ricepay/web",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ricepay/shared": "workspace:*",
+    "@ricepay/web-lib": "workspace:^",
+    "@tanstack/react-query": "^5.51.0",
+    "next": "14.2.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "viem": "^2.33.3",
+    "wagmi": "^2.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/react": "^18.3.3",
+    "typescript": "^5.5.4"
+  }
+}

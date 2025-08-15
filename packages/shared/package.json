@@ -1,0 +1,18 @@
+{
+  "name": "@ricepay/shared",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "viem": "^2.17.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
