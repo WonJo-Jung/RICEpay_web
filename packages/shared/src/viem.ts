@@ -13,7 +13,11 @@ export const BASE_SEPOLIA = {
   id: 84532,
   name: 'Base Sepolia',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: { default: { http: ['https://sepolia.base.org'] } }
+  rpcUrls: { default: { http: ['https://sepolia.base.org'] } },
+  blockExplorers: {
+    default: { name: 'Base Sepolia', url: 'https://sepolia-explorer.base.org' },
+  },
+  testnet: true,
 };
 
 export const USDC_DECIMALS = 6;
