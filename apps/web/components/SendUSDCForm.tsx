@@ -6,7 +6,7 @@ import { useUSDC } from "../hooks/useUSDC";
 export default function SendUSDCForm() {
   const { address, isConnected } = useAccount();
   const [txState, setTxState] = useState<{
-    status: string;
+    status: "pending" | "success" | "failed";
     hash: `0x${string}`;
     blockNumber?: number;
     feeEth?: string;
@@ -16,8 +16,9 @@ export default function SendUSDCForm() {
       to: `0x${string}`;
       value: bigint;
     };
+    errMsg?: string;
   }>();
-  const { balanceOf, transfer } = useUSDC({ setTxState });
+  const { getBalance, transfer } = useUSDC({ setTxState });
   const [to, setTo] = useState("" as `0x${string}`);
   const [amt, setAmt] = useState("0");
 
@@ -25,8 +26,8 @@ export default function SendUSDCForm() {
     <div>
       <div>My address: {address}</div>
       <button
-        onClick={async () => alert(await balanceOf())}
-        disabled={!isConnected}
+        onClick={async () => alert(await getBalance())}
+        disabled={!isConnected || txState?.status === "pending"}
       >
         Check USDC Balance
       </button>
@@ -50,7 +51,7 @@ export default function SendUSDCForm() {
         </button>
       </div>
 
-      {txState && (
+      {txState && txState.status === "success" && (
         <>
           <div>
             <span>status: {txState.status}, </span>
@@ -69,6 +70,12 @@ export default function SendUSDCForm() {
             </div>
           )}
         </>
+      )}
+
+      {txState && txState.status === "failed" && (
+        <div>
+          <span>msg: {txState.errMsg}</span>
+        </div>
       )}
     </div>
   );
