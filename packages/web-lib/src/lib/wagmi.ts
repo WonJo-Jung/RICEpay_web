@@ -1,5 +1,5 @@
 import { http, createConfig } from 'wagmi'
-import { BASE_SEPOLIA } from '../../../shared/src/viem'  // 공통 정의 불러오기
+import { BASE_SEPOLIA } from '@ricepay/shared'  // 공통 정의 불러오기
 
 export const config = createConfig({
   chains: [BASE_SEPOLIA],

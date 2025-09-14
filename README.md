@@ -1,4 +1,3 @@
-
 # RICE Pay — US→MX Corridor MVP (Monorepo)
 
 TypeScript monorepo for **non-custodial** USDC remittance MVP.
@@ -8,7 +7,6 @@ TypeScript monorepo for **non-custodial** USDC remittance MVP.
 - `apps/web` — Next.js 14 (PWA) dashboard + checkout
 - `apps/api` — NestJS API (invoices/payments/address-book)
 - `apps/app` — React Native (Expo) sender app
-- `packages/shared` — shared TS types, zod schemas, viem chain utils
 - `packages/config` — eslint/prettier/tsconfig base
 
 ## Quick Start
@@ -17,4 +15,5 @@ TypeScript monorepo for **non-custodial** USDC remittance MVP.
 pnpm i
 pnpm dev
 ```
+
 See each app's README for environment variables.

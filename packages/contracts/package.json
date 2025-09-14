@@ -18,11 +18,11 @@
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^3.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
-    "@ricepay/shared": "workspace:*"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.4.0"
+    "@openzeppelin/contracts": "^5.4.0",
+    "@ricepay/shared": "github:WonJo-Jung/RICEpay_shared#main"
   },
   "type": "module"
 }
