@@ -21,6 +21,16 @@ export default function SendUSDCForm() {
   const { getBalance, transfer } = useUSDC({ setTxState });
   const [to, setTo] = useState("" as `0x${string}`);
   const [amt, setAmt] = useState("0");
+  const [isSending, setIsSending] = useState(false);
+
+  const onSend = async () => {
+    try {
+      setIsSending(true);
+      await transfer(to, amt);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <div>
@@ -43,12 +53,10 @@ export default function SendUSDCForm() {
           onChange={(e) => setAmt(e.target.value)}
           placeholder="Amount (USDC)"
         />
-        <button
-          onClick={async () => await transfer(to, amt)}
-          disabled={!isConnected}
-        >
+        <button onClick={onSend} disabled={!isConnected || isSending}>
           Send
         </button>
+        {isSending && <span>전송 중...</span>}
       </div>
 
       {txState && txState.status === "success" && (
