@@ -1,4 +1,4 @@
-
+// 3. 결제 api의 입구
 import { Controller, Post, Body } from '@nestjs/common';
 import { z } from 'zod';
 import { CreatePaymentSchema } from '@ricepay/shared';
