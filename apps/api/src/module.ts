@@ -4,9 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule } from '@nestjs/throttler';
-
-import { PaymentsController } from './payments.controller';
 import { FxModule } from './fx/fx.module'; // 새로 만들 환율 모듈
+import { FeesModule } from './fees/fees.module';
 
 @Module({
   imports: [
@@ -26,8 +25,9 @@ import { FxModule } from './fx/fx.module'; // 새로 만들 환율 모듈
     }]),
     // 환율 모듈
     FxModule,
+    // 수수료 모듈
+    FeesModule,
   ],
-  controllers: [PaymentsController],
   providers: [],
 })
 export class AppModule {}
