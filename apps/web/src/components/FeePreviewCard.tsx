@@ -12,7 +12,7 @@ export function FeePreviewCard({ data }: { data: FeePreviewResponse }) {
         수수료·가스비 미리보기
       </div>
 
-      <div>보내는 금액 (USDC): {intToUsdc(amount)}</div>
+      <div>보내는 금액: {intToUsdc(amount)} USDC</div>
 
       <div>
         수수료: {intToUsdc(riceFee.token)} USDC (~${riceFee.usd})
@@ -22,7 +22,7 @@ export function FeePreviewCard({ data }: { data: FeePreviewResponse }) {
         가스비: {gas.native} {gas.nativeSymbol} (~${gas.usd})
       </div>
 
-      <div>수취 금액 (USDC): {intToUsdc(totals.receiverGets.token)}</div>
+      <div>수취 금액: {intToUsdc(totals.receiverGets.token)} USDC</div>
 
       <div style={{ marginTop: 8, opacity: 0.7, fontSize: 12 }}>
         정책: {riceFee.policy.pct * 100}% / ${riceFee.policy.minUsd.toFixed(2)}{" "}
