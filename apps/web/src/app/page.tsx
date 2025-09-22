@@ -2,6 +2,7 @@ import { ConnectButton } from "@ricepay/web-lib";
 import SendUSDCForm from "../components/SendUSDCForm";
 import FxCard from "../components/FxCard";
 import { fetchUsdMxnServer } from "../lib/fx-server";
+import SendPage from "./SendPage";
 
 export default async function Page() {
   const data = await fetchUsdMxnServer(); // 초기 데이터
@@ -18,6 +19,10 @@ export default async function Page() {
       <div>dev-05</div>
       <div>******</div>
       <FxCard initialData={data} />
+      <div>******</div>
+      <div>dev-06</div>
+      <div>******</div>
+      <SendPage />
     </main>
   );
 }

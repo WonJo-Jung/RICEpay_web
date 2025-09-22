@@ -3,9 +3,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { CacheModule } from '@nestjs/cache-manager';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { FxModule } from './fx/fx.module'; // 새로 만들 환율 모듈
 import { FeesModule } from './fees/fees.module';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { FeesModule } from './fees/fees.module';
     }),
     // 메모리 캐시 (전역)
     CacheModule.register({ isGlobal: true }),
-    // 간단 레이트리밋
+    // 간단 레이트리밋(전역)
     ThrottlerModule.forRoot([{
       ttl: 1000, // 1s
       limit: 10, // 초당 10회
@@ -28,6 +29,8 @@ import { FeesModule } from './fees/fees.module';
     // 수수료 모듈
     FeesModule,
   ],
-  providers: [],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard }, // ✅ 전역 가드 활성화
+  ],
 })
 export class AppModule {}
