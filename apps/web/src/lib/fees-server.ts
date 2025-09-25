@@ -60,7 +60,7 @@ export async function previewFees(p: FeePreviewParams): Promise<FeePreviewRespon
     amount: p.amountInt,
   }).toString();
 
-  const url = `${API_BASE || ''}/v1/fees/preview?${qs}`;
+  const url = `${API_BASE || ''}/fees/preview?${qs}`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {
     const t = await res.text().catch(() => '');

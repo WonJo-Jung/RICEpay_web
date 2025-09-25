@@ -1,0 +1,309 @@
+"use client";
+
+import { useState } from "react";
+import { useAddressBook } from "../hooks/useAddressBook";
+import type { Network } from "@ricepay/shared";
+import { normalizeEvmAddress } from "@ricepay/shared";
+
+const NETWORK_OPTIONS: Network[] = ["BASE", "ETHEREUM", "POLYGON", "ARBITRUM"];
+
+export default function AddressBookPanel() {
+  // 리스트 훅 (필터 연동)
+  const [query, setQuery] = useState("");
+  const [filterNet, setFilterNet] = useState<Network | undefined>(undefined);
+  const {
+    items,
+    loading,
+    error: listError,
+    create,
+    remove,
+    markUsed,
+    reload,
+  } = useAddressBook({ query, network: filterNet });
+
+  // 폼 상태
+  const [name, setName] = useState("");
+  const [network, setNetwork] = useState<Network>("BASE");
+  const [address, setAddress] = useState("");
+  const [memo, setMemo] = useState("");
+  const [consent, setConsent] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (submitting || done) return;
+
+    setFormError(null);
+    if (!name.trim()) return setFormError("이름을 입력하세요.");
+    if (!address.trim()) return setFormError("지갑 주소를 입력하세요.");
+    if (!consent) return setFormError("주소록 저장 동의에 체크하세요.");
+
+    try {
+      setSubmitting(true);
+      const checksum = normalizeEvmAddress(address.trim());
+      await create({
+        name: name.trim(),
+        network,
+        address: checksum,
+        memo: memo.trim(),
+      });
+      setDone(true);
+
+      // 폼 리셋
+      setName("");
+      setAddress("");
+      setMemo("");
+      setConsent(false);
+
+      // 목록 갱신
+      await reload();
+    } catch (e: any) {
+      setFormError(e?.message ?? "저장 실패");
+    } finally {
+      setSubmitting(false);
+      setTimeout(() => setDone(false), 1200); // 완료 배지 잠깐 표시
+    }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      {/* ===== 폼 ===== */}
+      <form onSubmit={onSubmit} style={styles.card}>
+        <h3 style={styles.title}>주소록 저장</h3>
+
+        <label style={styles.label}>
+          <span>수취인 이름</span>
+          <input
+            style={styles.input}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="예: Alice"
+            maxLength={64}
+            required
+          />
+        </label>
+
+        <label style={styles.label}>
+          <span>네트워크</span>
+          <select
+            style={styles.input}
+            value={network}
+            onChange={(e) => setNetwork(e.target.value as Network)}
+          >
+            {NETWORK_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n[0] + n.slice(1).toLowerCase()}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={styles.label}>
+          <span>지갑 주소</span>
+          <input
+            style={styles.input}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="0x… (EVM 주소)"
+            required
+          />
+        </label>
+
+        <label style={styles.label}>
+          <span>메모 (선택)</span>
+          <input
+            style={styles.input}
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="예: 가족, 상점명 등"
+            maxLength={2000}
+          />
+        </label>
+
+        <label
+          style={{
+            ...styles.label,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+          />
+          <span>
+            이 수취인을 <b>이 기기</b>에 저장합니다
+          </span>
+        </label>
+
+        {formError && <div style={styles.error}>{formError}</div>}
+        <button
+          type="submit"
+          disabled={submitting}
+          style={{ ...styles.button, opacity: submitting ? 0.6 : 1 }}
+        >
+          {submitting ? "저장 중…" : "저장"}
+        </button>
+        {done && <div style={styles.success}>저장되었습니다 ✅</div>}
+      </form>
+
+      {/* ===== 목록 툴바 ===== */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <input
+          style={{ ...styles.input, flex: 1 }}
+          placeholder="이름/주소/메모 검색"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <select
+          style={styles.input}
+          value={filterNet ?? ""}
+          onChange={(e) =>
+            setFilterNet((e.target.value || undefined) as Network | undefined)
+          }
+        >
+          <option value="">전체 네트워크</option>
+          {NETWORK_OPTIONS.map((n) => (
+            <option key={n} value={n}>
+              {n[0] + n.slice(1).toLowerCase()}
+            </option>
+          ))}
+        </select>
+        <button onClick={() => reload()} style={styles.secondaryBtn}>
+          새로고침
+        </button>
+      </div>
+
+      {/* ===== 목록 ===== */}
+      <div style={styles.card}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 8,
+          }}
+        >
+          <h3 style={styles.title}>주소록 목록</h3>
+          <span style={{ color: "#6b7280" }}>
+            {loading ? "로딩 중…" : `${items.length}건`}
+          </span>
+        </div>
+
+        {listError && <div style={styles.error}>불러오기 오류</div>}
+
+        {!loading && items.length === 0 ? (
+          <div style={{ color: "#6b7280" }}>저장된 주소가 없습니다.</div>
+        ) : (
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "grid",
+              gap: 8,
+            }}
+          >
+            {items.map((e) => (
+              <li key={e.id} style={styles.row}>
+                <div style={{ display: "grid", gap: 4 }}>
+                  <b>{e.name}</b>
+                  <span style={{ fontSize: 12, color: "#6b7280" }}>
+                    {e.network} · {e.address} · {e.memo}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#6b7280" }}>
+                    사용횟수 {e.usageCount}
+                    {e.lastUsedAt
+                      ? ` · 최근 ${new Date(e.lastUsedAt).toLocaleString()}`
+                      : ""}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => markUsed(e.id)} style={styles.pillBtn}>
+                    사용
+                  </button>
+                  <button
+                    onClick={() => remove(e.id)}
+                    style={{
+                      ...styles.pillBtn,
+                      background: "#fee2e2",
+                      color: "#991b1b",
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  card: {
+    width: "100%",
+    maxWidth: 760,
+    padding: 16,
+    borderRadius: 12,
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  title: { margin: 0, fontSize: 18, fontWeight: 700 },
+  label: { display: "flex", flexDirection: "column", gap: 6 },
+  input: {
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+    outline: "none",
+  },
+  button: {
+    height: 40,
+    borderRadius: 8,
+    background: "#111827",
+    color: "#fff",
+    border: "none",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+  secondaryBtn: {
+    height: 40,
+    borderRadius: 8,
+    background: "#e5e7eb",
+    color: "#111827",
+    border: "none",
+    cursor: "pointer",
+    fontWeight: 600,
+    padding: "0 12px",
+  },
+  error: { color: "crimson", fontSize: 13 },
+  success: { color: "#065f46", fontSize: 13 },
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    padding: 12,
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  pillBtn: {
+    height: 32,
+    borderRadius: 999,
+    padding: "0 12px",
+    background: "#eef2ff",
+    color: "#3730a3",
+    border: "none",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+};

@@ -16,7 +16,7 @@
     "@nestjs/platform-express": "^10.4.0",
     "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^5.16.1",
-    "@ricepay/shared": "github:WonJo-Jung/RICEpay_shared#main",
+    "@ricepay/shared": "github:WonJo-Jung/RICEpay_shared#b57dc93a745d2b9d888694054fb6ca83469f3fb5",
     "axios": "^1.12.2",
     "bullmq": "^5.7.6",
     "cache-manager": "^7.2.0",
