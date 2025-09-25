@@ -7,6 +7,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { FxModule } from './fx/fx.module'; // 새로 만들 환율 모듈
 import { FeesModule } from './fees/fees.module';
 import { APP_GUARD } from '@nestjs/core';
+import { TxModule } from './tx/tx.module';
+import { AlchemyWebhookController } from './webhooks/alchemy.controller';
 
 @Module({
   imports: [
@@ -28,9 +30,12 @@ import { APP_GUARD } from '@nestjs/core';
     FxModule,
     // 수수료 모듈
     FeesModule,
+    // 트랜잭션 상태 추적 모듈
+    TxModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }, // ✅ 전역 가드 활성화
   ],
+  controllers: [AlchemyWebhookController]
 })
 export class AppModule {}

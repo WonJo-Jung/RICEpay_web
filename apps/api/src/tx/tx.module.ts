@@ -1,0 +1,22 @@
+import { Module } from '@nestjs/common';
+import { TxService } from './tx.service';
+import { TxController } from './tx.controller';
+import { TxStream } from './tx.stream';
+
+/**
+ * TxModule
+ *
+ * 트랜잭션 상태 추적 모듈 (Transaction Tracking Module).
+ * - 사용자가 생성한 txHash를 DB에 기록 (PENDING 상태)
+ * - Alchemy webhook 이벤트를 수신하여 상태(CONFIRMED/FAILED 등) 업데이트
+ * - SSE를 통해 클라이언트(web/app)에 상태 변경을 실시간 전달
+ *
+ * ⚖️ 비수탁 원칙: 서버는 온체인 데이터를 '조회·기록·알림'만 담당하며,
+ *    프라이빗 키나 송금 집행은 일절 하지 않음.
+ */
+@Module({
+  providers: [TxService, TxStream],
+  controllers: [TxController],
+  exports: [TxService, TxStream],
+})
+export class TxModule {}

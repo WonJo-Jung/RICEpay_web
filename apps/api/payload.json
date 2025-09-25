@@ -1,0 +1,1 @@
+{"event":{"eventId":"evt_test_12345","transaction":{"hash":"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","status":"confirmed"},"block":{"number":123456},"confirmations":2,"type":"MINED"}}

@@ -8,40 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  phone     String?
-
-  kycLevel  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  AddressBook AddressBook[]
-  Payments     Payment[]
-}
-
-model AddressBook {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  address   String
-  memo      String?
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-}
-
-model Payment {
-  id        String   @id @default(cuid())
-  userId    String
-  to        String
-  amountUsdc String
-  txHash    String?
-  status    String   @default("pending") // pending|confirmed|failed
-  chainId   Int
-  createdAt DateTime @default(now())
-  confirmedAt DateTime?
-
-  user User @relation(fields: [userId], references: [id])
+model Transaction {
+  id             String   @id @default(cuid())
+  chainId        Int
+  network        String
+  txHash         String   @unique
+  from           String
+  to             String
+  token          String?
+  amount         String?
+  status         String   // PENDING | CONFIRMED | FAILED | DROPPED_REPLACED | UNKNOWN
+  blockNumber    Int?
+  confirmations  Int?     @default(0)
+  lastEventId    String?  @unique
+  rawPayload     Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
