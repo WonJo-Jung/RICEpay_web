@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAddressBook } from "../hooks/useAddressBook";
-import type { Network } from "@ricepay/shared";
+import type { AddressBookEntry, Network } from "@ricepay/shared";
 import { normalizeEvmAddress } from "@ricepay/shared";
+import toast, { Toaster } from "react-hot-toast";
 
 const NETWORK_OPTIONS: Network[] = ["BASE", "ETHEREUM", "POLYGON", "ARBITRUM"];
+type SortKey = "recent" | "name";
 
 export default function AddressBookPanel() {
   // 리스트 훅 (필터 연동)
@@ -32,6 +34,78 @@ export default function AddressBookPanel() {
   const [done, setDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const [sort, setSort] = useState<SortKey>("recent");
+  // 정렬(단순 버전)
+  const sorted = useMemo(() => {
+    const copy = [...items];
+    if (sort === "recent") {
+      copy.sort(
+        (a, b) =>
+          (b.lastUsedAt ?? "").localeCompare(a.lastUsedAt ?? "") ||
+          b.usageCount - a.usageCount ||
+          a.name.localeCompare(b.name)
+      );
+    } else {
+      copy.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return copy;
+  }, [items, sort]);
+
+  // 삭제 UX: 되돌리기(10초)
+  const [lastDeleted, setLastDeleted] = useState<AddressBookEntry | null>(null);
+  const [undoTimer, setUndoTimer] = useState<NodeJS.Timeout | null>(null);
+
+  async function handleDelete(id: string) {
+    const ok = window.confirm(
+      "이 수취인을 삭제할까요? (나중에 같은 주소로 저장하면 복구됩니다)"
+    );
+    if (!ok) return;
+    const toDelete = items.find((i) => i.id === id);
+    try {
+      await remove(id);
+      toast.success("삭제되었습니다");
+      if (toDelete) {
+        setLastDeleted(toDelete);
+        if (undoTimer) clearTimeout(undoTimer);
+        setUndoTimer(setTimeout(() => setLastDeleted(null), 10_000));
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "삭제 실패");
+    }
+  }
+
+  async function handleUndo() {
+    if (!lastDeleted) return;
+    try {
+      await create({
+        name: lastDeleted.name,
+        network: lastDeleted.network,
+        address: lastDeleted.address,
+        memo: lastDeleted.memo ?? "",
+      });
+      setLastDeleted(null);
+      toast.success("되돌렸습니다");
+    } catch (e: any) {
+      toast.error(e?.message ?? "되돌리기 실패");
+    }
+  }
+
+  useEffect(
+    () => () => {
+      if (undoTimer) clearTimeout(undoTimer);
+    },
+    [undoTimer]
+  );
+
+  async function onUse(id: string) {
+    try {
+      await markUsed(id);
+      toast.success("사용 기록 업데이트");
+    } catch (e: any) {
+      toast.error(e?.message ?? "사용 처리 실패");
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (submitting || done) return;
@@ -44,6 +118,11 @@ export default function AddressBookPanel() {
     try {
       setSubmitting(true);
       const checksum = normalizeEvmAddress(address.trim());
+      if (!checksum) {
+        setFormError("유효하지 않은 EVM 주소입니다");
+        toast.error("유효하지 않은 EVM 주소입니다");
+        return;
+      }
       await create({
         name: name.trim(),
         network,
@@ -51,6 +130,7 @@ export default function AddressBookPanel() {
         memo: memo.trim(),
       });
       setDone(true);
+      toast.success("저장되었습니다");
 
       // 폼 리셋
       setName("");
@@ -61,7 +141,9 @@ export default function AddressBookPanel() {
       // 목록 갱신
       await reload();
     } catch (e: any) {
-      setFormError(e?.message ?? "저장 실패");
+      const msg = e?.message ?? "저장 실패";
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
       setTimeout(() => setDone(false), 1200); // 완료 배지 잠깐 표시
@@ -70,6 +152,14 @@ export default function AddressBookPanel() {
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      <Toaster position="top-center" />
+
+      {/* 안내 배너 */}
+      <div style={{ color: "#ff0000" }}>
+        주소록은 <b>이 기기에만</b> 저장됩니다. 서버에 전송하지 않으며, 기기
+        변경 시 복구되지 않습니다.
+      </div>
+
       {/* ===== 폼 ===== */}
       <form onSubmit={onSubmit} style={styles.card}>
         <h3 style={styles.title}>주소록 저장</h3>
@@ -82,7 +172,6 @@ export default function AddressBookPanel() {
             onChange={(e) => setName(e.target.value)}
             placeholder="예: Alice"
             maxLength={64}
-            required
           />
         </label>
 
@@ -108,7 +197,6 @@ export default function AddressBookPanel() {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="0x… (EVM 주소)"
-            required
           />
         </label>
 
@@ -137,7 +225,7 @@ export default function AddressBookPanel() {
             onChange={(e) => setConsent(e.target.checked)}
           />
           <span>
-            이 수취인을 <b>이 기기</b>에 저장합니다
+            이 수취인을 <strong>이 기기</strong>에 저장하는 데 동의합니다
           </span>
         </label>
 
@@ -174,6 +262,15 @@ export default function AddressBookPanel() {
             </option>
           ))}
         </select>
+        <select
+          className="border rounded px-3 py-2"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          title="정렬"
+        >
+          <option value="recent">최근순</option>
+          <option value="name">이름순</option>
+        </select>
         <button onClick={() => reload()} style={styles.secondaryBtn}>
           새로고침
         </button>
@@ -190,13 +287,13 @@ export default function AddressBookPanel() {
         >
           <h3 style={styles.title}>주소록 목록</h3>
           <span style={{ color: "#6b7280" }}>
-            {loading ? "로딩 중…" : `${items.length}건`}
+            {loading ? "로딩 중…" : `${sorted.length}건`}
           </span>
         </div>
 
         {listError && <div style={styles.error}>불러오기 오류</div>}
 
-        {!loading && items.length === 0 ? (
+        {!loading && sorted.length === 0 ? (
           <div style={{ color: "#6b7280" }}>저장된 주소가 없습니다.</div>
         ) : (
           <ul
@@ -208,7 +305,7 @@ export default function AddressBookPanel() {
               gap: 8,
             }}
           >
-            {items.map((e) => (
+            {sorted.map((e) => (
               <li key={e.id} style={styles.row}>
                 <div style={{ display: "grid", gap: 4 }}>
                   <b>{e.name}</b>
@@ -223,11 +320,16 @@ export default function AddressBookPanel() {
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={() => markUsed(e.id)} style={styles.pillBtn}>
+                  <button
+                    title="이 수취인을 사용한 것으로 기록(최근순 정렬에 반영)"
+                    onClick={async () => await onUse(e.id)}
+                    style={styles.pillBtn}
+                  >
                     사용
                   </button>
                   <button
-                    onClick={() => remove(e.id)}
+                    title="삭제해도 같은 주소로 다시 저장하면 복구됩니다"
+                    onClick={async () => await handleDelete(e.id)}
                     style={{
                       ...styles.pillBtn,
                       background: "#fee2e2",
@@ -240,6 +342,23 @@ export default function AddressBookPanel() {
               </li>
             ))}
           </ul>
+        )}
+
+        {/* 삭제 후 되돌리기 배너 */}
+        {lastDeleted && (
+          <div>
+            삭제되었습니다.
+            <button
+              onClick={handleUndo}
+              style={{
+                ...styles.pillBtn,
+                background: "#e5fee2",
+                color: "#68bf5e",
+              }}
+            >
+              되돌리기
+            </button>
+          </div>
         )}
       </div>
     </div>
