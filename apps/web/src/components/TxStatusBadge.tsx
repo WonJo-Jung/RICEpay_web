@@ -3,18 +3,30 @@ import type { TxRecord } from "@ricepay/shared";
 
 const EXPLORER_TX = process.env.NEXT_PUBLIC_BASE_SEPOLIA_EXPLORER!;
 
+const styles: Record<string, React.CSSProperties> = {
+  PENDING: { backgroundColor: "#fef9c3", color: "#854d0e" }, // 노랑
+  CONFIRMED: { backgroundColor: "#dcfce7", color: "#166534" }, // 초록
+  FAILED: { backgroundColor: "#fee2e2", color: "#991b1b" }, // 빨강
+  DROPPED_REPLACED: { backgroundColor: "#f3f4f6", color: "#1f2937" }, // 회색
+  EXPIRED: { backgroundColor: "#ffedd5", color: "#9a3412" }, // 주황
+  UNKNOWN: { backgroundColor: "#f3f4f6", color: "#1f2937" }, // 회색
+};
+
 export default function TxStatusBadge({ tx }: { tx: TxRecord | null }) {
   if (!tx) return <span>기록 없음</span>;
-  const cls = {
-    PENDING: "bg-yellow-100 text-yellow-800",
-    CONFIRMED: "bg-green-100 text-green-800",
-    FAILED: "bg-red-100 text-red-800",
-    DROPPED_REPLACED: "bg-gray-100 text-gray-800",
-    UNKNOWN: "bg-gray-100 text-gray-800",
-  }[tx.status];
+  const style = styles[tx.status] ?? styles.UNKNOWN;
 
   return (
-    <div className={`inline-flex items-center gap-2 px-2 py-1 rounded ${cls}`}>
+    <div
+      style={{
+        ...style,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "0.5rem",
+        padding: "0.25rem 0.5rem",
+        borderRadius: "0.25rem",
+      }}
+    >
       <span>{tx.status}</span>
       <a href={`${EXPLORER_TX}/${tx.txHash}`} target="_blank" rel="noreferrer">
         영수증

@@ -9,6 +9,7 @@ import { FeesModule } from './fees/fees.module';
 import { APP_GUARD } from '@nestjs/core';
 import { TxModule } from './tx/tx.module';
 import { AlchemyWebhookController } from './webhooks/alchemy.controller';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -32,6 +33,11 @@ import { AlchemyWebhookController } from './webhooks/alchemy.controller';
     FeesModule,
     // 트랜잭션 상태 추적 모듈
     TxModule,
+    // 전역 스케줄러 초기화 모듈 (Global Scheduler Module).
+    // - @Cron, @Interval, @Timeout 데코레이터를 인식하고 실행
+    // - TxCron, TxCleanupCron 등 각 모듈의 주기적 작업을 동작시킴
+    // - 앱 전체에서 스케줄 기반 잡을 사용할 수 있도록 전역 환경을 구성
+    ScheduleModule.forRoot(),
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }, // ✅ 전역 가드 활성화

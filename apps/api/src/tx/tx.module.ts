@@ -2,6 +2,11 @@ import { Module } from '@nestjs/common';
 import { TxService } from './tx.service';
 import { TxController } from './tx.controller';
 import { TxStream } from './tx.stream';
+import { TxCron } from './tx.cron';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TxReindexController } from './tx.reindex.controller';
+import { TxCleanupCron } from './tx.cleanup.cron';
+import { TxCleanupController } from './tx.cleanup.controller';
 
 /**
  * TxModule
@@ -15,8 +20,9 @@ import { TxStream } from './tx.stream';
  *    프라이빗 키나 송금 집행은 일절 하지 않음.
  */
 @Module({
-  providers: [TxService, TxStream],
-  controllers: [TxController],
+  imports: [ScheduleModule],
+  providers: [TxService, TxStream, TxCron, TxCleanupCron],
+  controllers: [TxController, TxReindexController, TxCleanupController],
   exports: [TxService, TxStream],
 })
 export class TxModule {}
