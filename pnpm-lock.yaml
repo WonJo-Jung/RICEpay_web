@@ -111,8 +111,8 @@ importers:
   apps/web:
     dependencies:
       '@ricepay/shared':
-        specifier: github:WonJo-Jung/RICEpay_shared#b57dc93a745d2b9d888694054fb6ca83469f3fb5
-        version: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b57dc93a745d2b9d888694054fb6ca83469f3fb5(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
+        specifier: github:WonJo-Jung/RICEpay_shared#2f6266678c9a6318831c2d714edee3620ad5ba81
+        version: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/2f6266678c9a6318831c2d714edee3620ad5ba81(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@ricepay/web-lib':
         specifier: workspace:^
         version: link:../../packages/web-lib
@@ -1037,10 +1037,6 @@ packages:
 
   '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/2f6266678c9a6318831c2d714edee3620ad5ba81':
     resolution: {tarball: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/2f6266678c9a6318831c2d714edee3620ad5ba81}
-    version: 0.1.0
-
-  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b57dc93a745d2b9d888694054fb6ca83469f3fb5':
-    resolution: {tarball: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b57dc93a745d2b9d888694054fb6ca83469f3fb5}
     version: 0.1.0
 
   '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b6206bb426e22964f8a81b99be913f912d29df8a':
@@ -5336,15 +5332,6 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b57dc93a745d2b9d888694054fb6ca83469f3fb5(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)':
-    dependencies:
-      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-
   '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b6206bb426e22964f8a81b99be913f912d29df8a(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
       viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
@@ -5388,7 +5375,7 @@ snapshots:
 
   '@scure/bip32@1.6.2':
     dependencies:
-      '@noble/curves': 1.8.1
+      '@noble/curves': 1.8.2
       '@noble/hashes': 1.7.2
       '@scure/base': 1.2.6
 
@@ -7986,10 +7973,10 @@ snapshots:
   ox@0.6.7(typescript@5.9.2)(zod@3.25.76):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
-      '@noble/curves': 1.8.1
+      '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.6.2
-      '@scure/bip39': 1.5.4
+      '@scure/bip32': 1.7.0
+      '@scure/bip39': 1.6.0
       abitype: 1.0.8(typescript@5.9.2)(zod@3.25.76)
       eventemitter3: 5.0.1
     optionalDependencies:

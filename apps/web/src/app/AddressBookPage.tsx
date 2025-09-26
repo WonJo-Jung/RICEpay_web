@@ -6,7 +6,7 @@ import type { AddressBookEntry, Network } from "@ricepay/shared";
 import { normalizeEvmAddress } from "@ricepay/shared";
 import toast, { Toaster } from "react-hot-toast";
 
-const NETWORK_OPTIONS: Network[] = ["BASE", "ETHEREUM", "POLYGON", "ARBITRUM"];
+const NETWORK_OPTIONS: Network[] = ["BASE_SEPOLIA"];
 type SortKey = "recent" | "name";
 
 export default function AddressBookPanel() {
@@ -25,7 +25,7 @@ export default function AddressBookPanel() {
 
   // 폼 상태
   const [name, setName] = useState("");
-  const [network, setNetwork] = useState<Network>("BASE");
+  const [network, setNetwork] = useState<Network>("BASE_SEPOLIA");
   const [address, setAddress] = useState("");
   const [memo, setMemo] = useState("");
   const [consent, setConsent] = useState(false);

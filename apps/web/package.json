@@ -8,7 +8,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ricepay/shared": "github:WonJo-Jung/RICEpay_shared#b57dc93a745d2b9d888694054fb6ca83469f3fb5",
+    "@ricepay/shared": "github:WonJo-Jung/RICEpay_shared#2f6266678c9a6318831c2d714edee3620ad5ba81",
     "@ricepay/web-lib": "workspace:^",
     "@tanstack/react-query": "^5.51.0",
     "localforage": "^1.10.0",

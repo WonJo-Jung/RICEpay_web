@@ -5,6 +5,7 @@ import { erc20Abi, assertAddress, toUserMessage, withRetry } from '@ricepay/shar
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { parseUnits, formatUnits, formatEther, parseAbiItem } from 'viem'
 import { BASE_SEPOLIA } from '@ricepay/shared'
+import { registerTx } from "../lib/registerTx"
 
 // ✅ 공통 상수
 const USDC = process.env.NEXT_PUBLIC_USDC_ADDR as `0x${string}`
@@ -112,11 +113,19 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
           hash,
           blockNumber: Number(blockNumber),
           feeEth,
-          explorerUrl: `https://sepolia-explorer.base.org/tx/${hash}`,
           transfer: { from, to: toTX, value: Number(value) },
         }
 
         setTxState(summary)
+        await registerTx({
+          txHash: hash,
+          from,
+          to: toTX as `0x${string}`,
+          token: USDC,
+          amount,          // "12.34" 같은 10진 문자열
+          chainId: BASE_SEPOLIA.id,
+        });
+        return hash;
       } catch (err) {
         // 7) 에러 메시지 정규화
         const message = toUserMessage(err)

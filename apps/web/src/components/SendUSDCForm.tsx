@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useUSDC } from "../hooks/useUSDC";
+import { useTxStatus } from "../hooks/useTxStatus";
+import TxStatusBadge from "../components/TxStatusBadge";
 
 export default function SendUSDCForm() {
   const { address, isConnected } = useAccount();
@@ -10,7 +12,6 @@ export default function SendUSDCForm() {
     hash: `0x${string}`;
     blockNumber?: number;
     feeEth?: string;
-    explorerUrl?: string;
     transfer?: {
       from: `0x${string}`;
       to: `0x${string}`;
@@ -22,11 +23,17 @@ export default function SendUSDCForm() {
   const [to, setTo] = useState("" as `0x${string}`);
   const [amt, setAmt] = useState("0");
   const [isSending, setIsSending] = useState(false);
+  const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
+  const { record: txRecord } = useTxStatus(hash, {
+    sse: true,
+    pollMs: 5000,
+  });
 
   const onSend = async () => {
     try {
       setIsSending(true);
-      await transfer(to, amt);
+      const h = await transfer(to, amt);
+      setHash(h);
     } finally {
       setIsSending(false);
     }
@@ -65,10 +72,8 @@ export default function SendUSDCForm() {
             <span>status: {txState.status}, </span>
             <span>hash: {txState.hash}, </span>
             <span>blockNumber: {txState.blockNumber}, </span>
-            <span>feeEth: {txState.feeEth}, </span>
-            <a href={txState.explorerUrl} target="_blank" rel="noreferrer">
-              Explorer에서 보기
-            </a>
+            <span>feeEth: {txState.feeEth}</span>
+            <TxStatusBadge tx={txRecord ?? null} />
           </div>
           {txState.transfer && (
             <div>
