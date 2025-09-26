@@ -7,6 +7,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TxReindexController } from './tx.reindex.controller';
 import { TxCleanupCron } from './tx.cleanup.cron';
 import { TxCleanupController } from './tx.cleanup.controller';
+import { MaintenanceGuard } from '../common/guards/maintenance.guard';
 
 /**
  * TxModule
@@ -21,7 +22,7 @@ import { TxCleanupController } from './tx.cleanup.controller';
  */
 @Module({
   imports: [ScheduleModule],
-  providers: [TxService, TxStream, TxCron, TxCleanupCron],
+  providers: [TxService, TxStream, TxCron, TxCleanupCron, MaintenanceGuard],
   controllers: [TxController, TxReindexController, TxCleanupController],
   exports: [TxService, TxStream],
 })
