@@ -24,6 +24,7 @@ export default function SendUSDCForm() {
   const [amt, setAmt] = useState("0");
   const [isSending, setIsSending] = useState(false);
   const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
+
   const {
     record: txRecord,
     loading: txLoading,
@@ -31,6 +32,42 @@ export default function SendUSDCForm() {
   } = useTxStatus(hash, {
     sse: true,
     pollMs: 5000,
+    stopOnTerminal: true,
+    minConfirmations: 1,
+    // timeoutMs: 5 * 60 * 1000, // 5분 타임아웃
+    minIntervalMs: 8000,
+
+    onAnyUpdate: (rec) => {
+      // 상태/컨펌 변화 최초 1회
+      console.log("[Tx Update]", rec.status, rec.txHash, rec.confirmations);
+    },
+    onConfirmed: (rec) => {
+      alert("송금 완료. 트랜잭션이 확정되었습니다.");
+      console.log("[TX][confirmed]", rec.txHash, rec.confirmations);
+      // 필요 시 탐색기 열기: window.open(`${EXPLORER_TX}/${rec.txHash}`, "_blank");
+    },
+    onFailed: (rec) => {
+      alert(
+        "송금 실패: 트랜잭션이 실패했습니다. 영수증에서 세부 사유를 확인하세요."
+      );
+      console.warn("[TX][failed]", rec.txHash);
+    },
+    onExpired: (rec) => {
+      alert(
+        "만료됨: 오랫동안 처리되지 않아 만료 처리되었습니다. 네트워크/가스 설정을 확인하고 재시도하세요."
+      );
+      console.warn("[TX][expired]", rec.txHash);
+    },
+    onDroppedReplaced: (rec) => {
+      // 대체(프론트에 새 해시를 알 수 없으면 안내만)
+      alert(
+        "트랜잭션이 더 높은 가스 가격 등으로 대체되었습니다. 최신 해시로 다시 추적해 주세요."
+      );
+      console.warn("[TX][dropped_replaced]", rec.txHash);
+    },
+    onTerminal: (rec) => {
+      console.log("[TX][terminal]", rec.txHash, rec.status);
+    },
   });
 
   const onSend = async () => {
@@ -89,7 +126,7 @@ export default function SendUSDCForm() {
             <div>
               <span>from: {txState.transfer.from}, </span>
               <span>to: {txState.transfer.to}, </span>
-              <span>value: {txState.transfer.value}</span>
+              <span>value: {txState.transfer.value.toString()}</span>
             </div>
           )}
         </>
