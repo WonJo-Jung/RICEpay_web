@@ -24,7 +24,11 @@ export default function SendUSDCForm() {
   const [amt, setAmt] = useState("0");
   const [isSending, setIsSending] = useState(false);
   const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
-  const { record: txRecord } = useTxStatus(hash, {
+  const {
+    record: txRecord,
+    loading: txLoading,
+    error: txError,
+  } = useTxStatus(hash, {
     sse: true,
     pollMs: 5000,
   });
@@ -73,6 +77,12 @@ export default function SendUSDCForm() {
             <span>hash: {txState.hash}, </span>
             <span>blockNumber: {txState.blockNumber}, </span>
             <span>feeEth: {txState.feeEth}</span>
+            {txLoading && <span>전송 상태 로딩 중...</span>}
+            {txError && (
+              <span style={{ color: "red" }}>
+                {(txError as Error)?.message ?? "상태 조회 중 오류"}
+              </span>
+            )}
             <TxStatusBadge tx={txRecord ?? null} />
           </div>
           {txState.transfer && (

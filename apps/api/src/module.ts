@@ -21,11 +21,11 @@ import { ScheduleModule } from '@nestjs/schedule';
       maxRedirects: 0,
     }),
     // 메모리 캐시 (전역)
-    CacheModule.register({ isGlobal: true }),
+    CacheModule.register({ isGlobal: true, ttl: 5 }),
     // 간단 레이트리밋(전역)
     ThrottlerModule.forRoot([{
-      ttl: 1000, // 1s
-      limit: 10, // 초당 10회
+      ttl: 60, // 60s
+      limit: 120, // 120번
     }]),
     // 환율 모듈
     FxModule,
