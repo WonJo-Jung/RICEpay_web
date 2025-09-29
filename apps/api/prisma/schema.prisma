@@ -25,3 +25,35 @@ model Transaction {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+model Receipt {
+  id              String   @id @default(cuid())
+  transactionId   String   @unique
+  chainId         Int
+  network         String   // "BASE" | "ETHEREUM" | ...
+  txHash          String
+  direction       String   // "SENT" | "RECEIVED"
+  token           String   // "USDC"
+  amount          Decimal
+  // 스냅샷들 (확정 시점)
+  fiatCurrency    String   // "USD"
+  fiatRate        Decimal  // rate at confirmation
+  fiatAmount      Decimal  // amount * rate
+  gasPaid         Decimal? // native unit at confirmation
+  gasFiatAmount   Decimal? // gas * nativeUSD
+  appFee          Decimal? // token unit
+  appFeeFiat      Decimal?
+  policyVersion   String
+  fromAddress     String
+  toAddress       String
+  submittedAt     DateTime
+  confirmedAt     DateTime
+  shareToken      String?  @unique
+  snapshot        Json     // 기타: appVersion, locale, usdSource, confirmations 등
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([fromAddress])
+  @@index([toAddress])
+  @@index([confirmedAt])
+}

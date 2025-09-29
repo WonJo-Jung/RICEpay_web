@@ -1,10 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { Cron } from '@nestjs/schedule';
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/db';
 
 const client = createPublicClient({
   chain: baseSepolia,

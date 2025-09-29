@@ -165,4 +165,6 @@ export class FeesService {
     await this.cache.set(key, response, 15); // ✅ 15s TTL
     return response;
   }
+
+  currentPolicyVersion() { return 'v1'; }
 }

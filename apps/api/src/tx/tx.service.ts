@@ -1,15 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import type { TxRecord } from '@ricepay/shared';
+import { BASE_SEPOLIA, type TxRecord } from '@ricepay/shared';
 import { TxStream } from './tx.stream';
-
-const prisma = new PrismaClient();
+import { ReceiptService } from '../receipt/receipt.service';
+import { FxService } from '../fx/fx.service';
+import { FeesService } from '../fees/fees.service';
+import { prisma } from '../lib/db';
 
 const norm = (h: string) => h.toLowerCase() as `0x${string}`;
 
 @Injectable()
 export class TxService {
-  constructor(private stream: TxStream) {}
+  constructor(
+    private stream: TxStream,
+    private fx: FxService,                // DEV-05
+    private fees: FeesService,            // DEV-06
+    private receipts: ReceiptService,     // DEV-09
+  ) {}
 
   async upsertPending(dto: {
     txHash: string; from: string; to: string;
@@ -92,7 +98,7 @@ export class TxService {
           to:   '0x0000000000000000000000000000000000000000',
           token: null,
           amount: null,
-          chainId: 84532, // 또는 payload/환경에서 추론
+          chainId: BASE_SEPOLIA.id, // 또는 payload/환경에서 추론
           network: 'BASE_SEPOLIA',
           status: input.status,
           blockNumber: input.blockNumber ?? null,
@@ -106,6 +112,58 @@ export class TxService {
     if (!updated) return null;
     const tx = this.toTxRecord(updated);
     this.stream.push(tx);
+
+    // ===== 확정 분기: Receipt 1회 스냅샷 (멱등) =====
+    if (input.status === 'CONFIRMED') {
+      const already = await prisma.receipt.findUnique({
+        where: { transactionId: tx.id },
+        select: { id: true },
+      });
+
+      const essentialsReady =
+        !!tx.amount && !!tx.token &&
+        tx.from !== '0x0000000000000000000000000000000000000000' && tx.to !== '0x0000000000000000000000000000000000000000';
+
+      if (!already && essentialsReady) {
+        try {
+          const rateUsd = await this.fx.get("USD", "MXN");
+          const policyVersion = this.fees.currentPolicyVersion();
+
+          await this.receipts.createSnapshot({
+            transactionId: tx.id,
+            chainId: tx.chainId,
+            network: tx.network,
+            txHash: tx.txHash,
+            // 비수탁 송금/결제 기능에선 SENT로 고정이나 추후 온/오프램프 및 수탁 기능 확장시
+            // fromAddress(송금인) 정보가 없어 RECEIVED로 저장되어야 함
+            direction: 'SENT',
+            token: tx.token!,
+            amount: String(tx.amount),
+            fiatCurrency: 'USD',
+            fiatRate: String(rateUsd.rate),
+            gasPaid: updated.gasPaid ? String(updated.gasPaid) : undefined,
+            gasFiatAmount: updated.gasPaid ? String(updated.gasPaid * rateUsd.rate) : undefined,
+            appFee: updated.appFee ? String(updated.appFee) : undefined,
+            appFeeFiat: updated.appFee ? String(updated.appFee * rateUsd.rate) : undefined,
+            policyVersion,
+            fromAddress: tx.from,
+            toAddress: tx.to,
+            submittedAt: updated.createdAt,
+            confirmedAt: updated.updatedAt ?? new Date(),
+            snapshot: {
+              eventId: input.eventId,
+              confirmations: input.confirmations ?? null,
+              blockNumber: input.blockNumber ?? null,
+              appVersion: process.env.APP_VERSION ?? null,
+            },
+          });
+        } catch (e) {
+          // 실패 내성: 영수증 생성 실패해도 웹훅 응답은 성공
+          // console.warn('receipt snapshot failed', e);
+        }
+      }
+    }
+
     return tx;
   }
 

@@ -1,10 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { PrismaClient } from '@prisma/client';
 import { createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/db';
 
 // RPC 클라이언트 (Base Sepolia)
 const client = createPublicClient({

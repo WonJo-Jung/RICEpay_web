@@ -10,6 +10,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { TxModule } from './tx/tx.module';
 import { AlchemyWebhookController } from './webhooks/alchemy.controller';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ReceiptModule } from './receipt/receipt.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     // - TxCron, TxCleanupCron 등 각 모듈의 주기적 작업을 동작시킴
     // - 앱 전체에서 스케줄 기반 잡을 사용할 수 있도록 전역 환경을 구성
     ScheduleModule.forRoot(),
+    ReceiptModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }, // ✅ 전역 가드 활성화

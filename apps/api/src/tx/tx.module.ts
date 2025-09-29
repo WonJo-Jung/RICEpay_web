@@ -8,6 +8,9 @@ import { TxReindexController } from './tx.reindex.controller';
 import { TxCleanupCron } from './tx.cleanup.cron';
 import { TxCleanupController } from './tx.cleanup.controller';
 import { MaintenanceGuard } from '../common/guards/maintenance.guard';
+import { FeesService } from '../fees/fees.service';
+import { FxModule } from '../fx/fx.module';
+import { ReceiptModule } from '../receipt/receipt.module';
 
 /**
  * TxModule
@@ -21,8 +24,8 @@ import { MaintenanceGuard } from '../common/guards/maintenance.guard';
  *    프라이빗 키나 송금 집행은 일절 하지 않음.
  */
 @Module({
-  imports: [ScheduleModule],
-  providers: [TxService, TxStream, TxCron, TxCleanupCron, MaintenanceGuard],
+  imports: [FxModule, ScheduleModule, ReceiptModule],
+  providers: [TxService, TxStream, TxCron, TxCleanupCron, MaintenanceGuard, FeesService],
   controllers: [TxController, TxReindexController, TxCleanupController],
   exports: [TxService, TxStream],
 })
