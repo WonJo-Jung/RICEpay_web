@@ -57,3 +57,16 @@ model Receipt {
   @@index([toAddress])
   @@index([confirmedAt])
 }
+
+model ReceiptAudit {
+  id          String   @id @default(cuid())
+  receiptId   String
+  actorUserId String?
+  action      String   // 'ISSUE' | 'REUSE' | 'ROTATE' | 'REVOKE' | 'REVOKE_NOOP' | 'REVOKE_STALE' | 'REVOKE_DRYRUN' | 'REVOKE_RACE_NOOP'
+  ip          String?
+  userAgent   String?
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  @@index([receiptId])
+}
