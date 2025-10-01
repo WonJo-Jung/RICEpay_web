@@ -47,9 +47,10 @@ export type FeePreviewResponse = {
     };
 };
 
+const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
 const API_BASE = typeof window === 'undefined'
   ? '' // SSR/빌드에서는 절대 URL 사용 지양 → Next 라우트 핸들러나 상대경로
-  : (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '');
+  : (process.env.NEXT_PUBLIC_API_BASE_URL ? process.env.NEXT_PUBLIC_API_BASE_URL + PREFIX : '').replace(/\/+$/, '');
 
 export async function previewFees(p: FeePreviewParams): Promise<FeePreviewResponse> {
   const qs = new URLSearchParams({

@@ -1,9 +1,12 @@
 "use client";
-import { useState } from "react";
+import { BASE_SEPOLIA } from "@ricepay/shared";
+import { useEffect, useState } from "react";
 import { useWalletClient } from "wagmi";
+import { getNonce } from "../lib/address";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
-const DURATION = Number(process.env.VALID_SIGNITURE_DURATION_S!);
+const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
+const chainId = BASE_SEPOLIA.id;
 
 export default function ShareRevokeButton({
   id,
@@ -17,40 +20,73 @@ export default function ShareRevokeButton({
   const { data: wallet } = useWalletClient();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [originHost, setOriginHost] = useState<string | null>(null);
 
-  async function signForRevoke(path: string, expectedToken?: string | null) {
+  // 브라우저에서만 origin 설정
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOriginHost(window.location.origin);
+    }
+  }, []);
+
+  async function signForRevokeWithWagmi(
+    path: string,
+    expectedToken?: string | null
+  ) {
     if (!wallet) throw new Error("지갑이 연결되어 있지 않습니다 (wagmi)");
     const [address] = await wallet.getAddresses();
     if (!address) throw new Error("지갑 주소를 가져올 수 없습니다");
-    const exp = Math.floor(Date.now() / 1000) + DURATION;
-    const message =
-      `POST ${path}\n` +
-      (expectedToken ? `token=${expectedToken}\n` : "") +
-      `exp=${exp}`;
+
+    const { nonce, exp } = await getNonce();
+
+    // 안전하게 origin 결정 (브라우저 or 환경변수)
+    const origin =
+      originHost ??
+      (typeof window !== "undefined" ? window.location.origin : undefined) ??
+      process.env.NEXT_PUBLIC_APP_ORIGIN ?? // 선택: .env에 정의해두면 SSR에서도 fallback
+      "http://localhost:3000";
+
+    const message = [
+      `POST ${path}`,
+      expectedToken ? `token=${expectedToken}` : null,
+      `origin=${origin}`,
+      `chainId=${chainId}`,
+      `nonce=${nonce}`,
+      `exp=${exp}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const signature = await wallet.signMessage({ account: address, message });
-    return { address: address.toLowerCase(), signature, exp };
+    return { address: address.toLowerCase(), signature, exp, nonce };
   }
 
   async function revoke() {
     setLoading(true);
     setErr(null);
     try {
-      const path = `/v1/receipts/${id}/share/revoke`;
-      const { address, signature, exp } = await signForRevoke(
+      const path = `/${PREFIX}/receipts/${id}/share/revoke`;
+      const { address, signature, exp, nonce } = await signForRevokeWithWagmi(
         path,
         currentToken ?? undefined
       );
 
-      const res = await fetch(`${API_BASE}/receipts/${id}/share/revoke`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          address,
-          signature,
-          exp,
-          expectedToken: currentToken ?? undefined, // 스테일 보호
-        }),
-      });
+      const res = await fetch(
+        `${API_BASE}/${PREFIX}/receipts/${id}/share/revoke`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            address,
+            signature,
+            exp,
+            nonce,
+            origin,
+            chainId,
+            expectedToken: currentToken ?? undefined, // 스테일 보호
+          }),
+        }
+      );
       if (!res.ok)
         throw new Error(`${res.status} ${await res.text().catch(() => "")}`);
       const json: {

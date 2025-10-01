@@ -6,9 +6,9 @@ import { json, urlencoded } from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
-  app.setGlobalPrefix('v1');
+  app.setGlobalPrefix(process.env.GLOBAL_PREFIX!);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
-  app.enableCors({ origin: "http://localhost:3000" })
+  app.enableCors({ origin: process.env.ALLOWED_ORIGINS! || 'http://localhost:3000' })
   app.use(json({ verify: (req: any, _res, buf) => (req.rawBody = buf) }));
   app.use(urlencoded({ extended: true }));
   await app.listen(process.env.PORT || 4000);

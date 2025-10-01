@@ -20,4 +20,5 @@ export class FxError extends Error {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
-export const fxUrl = () => `${API_BASE}/fx?base=USD&quote=MXN`;
+const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
+export const fxUrl = () => `${API_BASE}/${PREFIX}/fx?base=USD&quote=MXN`;

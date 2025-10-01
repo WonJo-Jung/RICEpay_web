@@ -27,6 +27,7 @@ type Options = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
+const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
 const isTerminal = (s?: TxRecord['status']) =>
   s === 'CONFIRMED' || s === 'FAILED' || s === 'EXPIRED' || s === 'DROPPED_REPLACED';
 
@@ -134,7 +135,7 @@ export function useTxStatus(hash?: `0x${string}`, opts: Options = {}) {
     abortRef.current = ctrl;
 
     try {
-      const res = await fetch(`${API_BASE}/tx?hash=${lowerHash}`, { cache: 'no-store', signal: signal ?? ctrl.signal });
+      const res = await fetch(`${API_BASE}/${PREFIX}/tx?hash=${lowerHash}`, { cache: 'no-store', signal: signal ?? ctrl.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as TxRecord | null;
       if (!data) return;
@@ -216,7 +217,7 @@ export function useTxStatus(hash?: `0x${string}`, opts: Options = {}) {
     if (document.visibilityState === 'hidden') { startPolling(); return; }
     closeSSE();
 
-    const es = new EventSource(`${API_BASE}/tx/stream`);
+    const es = new EventSource(`${API_BASE}/${PREFIX}/tx/stream`);
     sseRef.current = es;
 
     let lastEmit = 0; // 디바운스(선택)

@@ -2,7 +2,7 @@ import localforage from 'localforage';
 import type { AddressBookEntry, Network } from '@ricepay/shared';
 
 localforage.config({ name: 'ricepay', storeName: 'address_book' });
-const KEY = 'address_book:v1';
+const KEY = `address_book:${process.env.NEXT_PUBLIC_GLOBAL_PREFIX!}`;
 const now = () => new Date().toISOString();
 
 async function loadAll(): Promise<AddressBookEntry[]> {

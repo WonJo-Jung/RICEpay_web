@@ -2,9 +2,12 @@
 import { useEffect, useState } from "react";
 import { useWalletClient } from "wagmi";
 import ShareRevokeButton from "./ShareRevokeButton";
+import { BASE_SEPOLIA } from "@ricepay/shared";
+import { getNonce } from "../lib/address";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!; // 예: http://localhost:4000/v1
-const DURATION = Number(process.env.VALID_SIGNITURE_DURATION_S!);
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
+const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
+const chainId = BASE_SEPOLIA.id;
 
 export default function ShareIssueRotateButton({ id }: { id: string }) {
   const [token, setToken] = useState<string | null>(null);
@@ -13,13 +16,21 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
   );
   const [err, setErr] = useState<string | null>(null);
   const { data: wallet } = useWalletClient();
+  const [originHost, setOriginHost] = useState<string | null>(null);
+
+  // 브라우저에서만 origin 설정
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOriginHost(window.location.origin);
+    }
+  }, []);
 
   // 🚀 마운트 시 현재 shareToken 불러오기
   useEffect(() => {
     (async () => {
       setLoading("init");
       try {
-        const res = await fetch(`${API_BASE}/receipts/${id}`);
+        const res = await fetch(`${API_BASE}/${PREFIX}/receipts/${id}`);
         if (res.ok) {
           const data = await res.json();
           if (data?.shareToken) {
@@ -34,7 +45,7 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
     })();
   }, [id]);
 
-  async function signForShareWithWagmi(method: "POST", path: string) {
+  async function signForShareWithWagmi(path: string) {
     if (!wallet)
       throw new Error(
         "지갑이 연결되어 있지 않습니다 (wagmi walletClient 없음)"
@@ -42,30 +53,49 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
     const [address] = await wallet.getAddresses();
     if (!address) throw new Error("지갑 주소를 가져올 수 없습니다");
 
-    const exp = Math.floor(Date.now() / 1000) + DURATION;
-    const message = `${method} ${path}\nexp=${exp}`;
+    const { nonce, exp } = await getNonce();
+
+    // 안전하게 origin 결정 (브라우저 or 환경변수)
+    const origin =
+      originHost ??
+      (typeof window !== "undefined" ? window.location.origin : undefined) ??
+      process.env.NEXT_PUBLIC_APP_ORIGIN ?? // 선택: .env에 정의해두면 SSR에서도 fallback
+      "http://localhost:3000";
+
+    const message = [
+      `POST ${path}`,
+      `origin=${origin}`,
+      `chainId=${chainId}`,
+      `nonce=${nonce}`,
+      `exp=${exp}`,
+    ].join("\n");
 
     const signature = await wallet.signMessage({ account: address, message });
-    return { address: address.toLowerCase(), signature, exp };
+    return { address: address.toLowerCase(), signature, exp, nonce };
   }
 
   async function requestToken(force = false) {
     setLoading(force ? "rotate" : "issue");
     setErr(null);
     try {
-      const path = `/v1/receipts/${id}/share`;
-      const { address, signature, exp } = await signForShareWithWagmi(
-        "POST",
-        path
-      );
+      const path = `/${PREFIX}/receipts/${id}/share`;
+      const { address, signature, exp, nonce } =
+        await signForShareWithWagmi(path);
 
-      const url = new URL(`${API_BASE}/receipts/${id}/share`);
+      const url = new URL(`${API_BASE}/${PREFIX}/receipts/${id}/share`);
       if (force) url.searchParams.set("force", "1");
 
       const res = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address, signature, exp }),
+        body: JSON.stringify({
+          address,
+          signature,
+          exp,
+          nonce,
+          origin,
+          chainId,
+        }),
       });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -80,7 +110,9 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
     }
   }
 
-  const shareUrl = token ? `http://localhost:3000/external/${token}` : null;
+  const shareUrl = token
+    ? `${process.env.NEXT_PUBLIC_APP_ORIGIN ?? "http://localhost:3000"}/external/${token}`
+    : null;
 
   async function copy() {
     if (!shareUrl) return;

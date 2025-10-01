@@ -1,10 +1,11 @@
 // 공통 API 클라이언트
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
+const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
 
 type FetchInit = RequestInit & { searchParams?: Record<string, string | number | undefined | null> };
 
 function buildURL(path: string, search?: FetchInit['searchParams']) {
-  const url = new URL(path.replace(/^\//, ''), API_BASE_URL.endsWith('/') ? API_BASE_URL : API_BASE_URL + '/');
+  const url = new URL(path.replace(/^\//, ''), API_BASE_URL + "/" + PREFIX + "/");
   if (search) {
     Object.entries(search).forEach(([k, v]) => {
       if (v !== undefined && v !== null && `${v}`.length > 0) url.searchParams.set(k, String(v));

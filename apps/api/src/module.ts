@@ -11,6 +11,7 @@ import { TxModule } from './tx/tx.module';
 import { AlchemyWebhookController } from './webhooks/alchemy.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReceiptModule } from './receipt/receipt.module';
+import { AuthController } from './auth/auth.controller';
 
 @Module({
   imports: [
@@ -44,6 +45,6 @@ import { ReceiptModule } from './receipt/receipt.module';
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }, // ✅ 전역 가드 활성화
   ],
-  controllers: [AlchemyWebhookController]
+  controllers: [AlchemyWebhookController, AuthController]
 })
 export class AppModule {}

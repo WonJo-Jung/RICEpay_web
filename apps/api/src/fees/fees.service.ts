@@ -166,5 +166,5 @@ export class FeesService {
     return response;
   }
 
-  currentPolicyVersion() { return 'v1'; }
+  currentPolicyVersion() { return process.env.POLICY_VERSION!; }
 }
