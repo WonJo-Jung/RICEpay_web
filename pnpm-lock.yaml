@@ -118,7 +118,7 @@ importers:
     dependencies:
       '@ricepay/shared':
         specifier: github:WonJo-Jung/RICEpay_shared#main
-        version: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/cb1e50a5e987142044c70d70e01d1ecd171a8e79(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
+        version: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/567e7bf25376c760ea7f5101da71879bcdaaac43(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@ricepay/web-lib':
         specifier: workspace:^
         version: link:../../packages/web-lib
@@ -1051,12 +1051,12 @@ packages:
     resolution: {tarball: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/2f6266678c9a6318831c2d714edee3620ad5ba81}
     version: 0.1.0
 
-  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b6206bb426e22964f8a81b99be913f912d29df8a':
-    resolution: {tarball: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b6206bb426e22964f8a81b99be913f912d29df8a}
+  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/567e7bf25376c760ea7f5101da71879bcdaaac43':
+    resolution: {tarball: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/567e7bf25376c760ea7f5101da71879bcdaaac43}
     version: 0.1.0
 
-  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/cb1e50a5e987142044c70d70e01d1ecd171a8e79':
-    resolution: {tarball: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/cb1e50a5e987142044c70d70e01d1ecd171a8e79}
+  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b6206bb426e22964f8a81b99be913f912d29df8a':
+    resolution: {tarball: https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b6206bb426e22964f8a81b99be913f912d29df8a}
     version: 0.1.0
 
   '@safe-global/safe-apps-provider@0.18.6':
@@ -5365,7 +5365,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b6206bb426e22964f8a81b99be913f912d29df8a(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)':
+  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/567e7bf25376c760ea7f5101da71879bcdaaac43(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
       viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       zod: 3.25.76
@@ -5374,7 +5374,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/cb1e50a5e987142044c70d70e01d1ecd171a8e79(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)':
+  '@ricepay/shared@https://codeload.github.com/WonJo-Jung/RICEpay_shared/tar.gz/b6206bb426e22964f8a81b99be913f912d29df8a(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)':
     dependencies:
       viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       zod: 3.25.76

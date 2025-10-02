@@ -6,7 +6,7 @@ import { prisma } from '../lib/db';
 
 const client = createPublicClient({
   chain: baseSepolia,
-  transport: http(process.env.ALCHEMY_RPC_URL!),
+  transport: http(process.env.CHAIN_BASE_SEPOLIA_RPC!),
 });
 
 const CLEAN_CRON = process.env.TX_CLEAN_CRON ?? '0 3 * * *';

@@ -6,7 +6,7 @@ import { baseSepolia } from 'viem/chains';
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
-  transport: http(process.env.ALCHEMY_RPC_URL!), // ex: https://base-sepolia.g.alchemy.com/v2/<KEY>
+  transport: http(process.env.CHAIN_BASE_SEPOLIA_RPC!), // ex: https://base-sepolia.g.alchemy.com/v2/<KEY>
 });
 
 @Controller('/webhooks/alchemy')

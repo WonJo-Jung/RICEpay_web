@@ -43,7 +43,7 @@ export default function ShareRevokeButton({
     const origin =
       originHost ??
       (typeof window !== "undefined" ? window.location.origin : undefined) ??
-      process.env.NEXT_PUBLIC_APP_ORIGIN ?? // 선택: .env에 정의해두면 SSR에서도 fallback
+      process.env.NEXT_PUBLIC_WEB_SIGN_ORIGIN ?? // 선택: .env에 정의해두면 SSR에서도 fallback
       "http://localhost:3000";
 
     const message = [

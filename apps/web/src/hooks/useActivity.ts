@@ -1,29 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiGet } from '../lib/api';
-
-export type ReceiptItem = {
-  id: string;
-  chainId: number;
-  network: string;
-  txHash: string;
-  direction: 'SENT' | 'RECEIVED'; // 서버 값(현재 SENT 위주) — 없으면 클라에서 계산 fallback 가능
-  token: string;
-  amount: string;
-  fiatCurrency: string;
-  fiatRate: string;
-  fiatAmount: string;
-  gasPaid?: string | null;
-  gasFiatAmount?: string | null;
-  appFee?: string | null;
-  appFeeFiat?: string | null;
-  policyVersion: string;
-  fromAddress: string;
-  toAddress: string;
-  submittedAt: string;
-  confirmedAt: string;
-};
-
-type ActivityResp = { items: ReceiptItem[]; nextCursor: string | null };
+import { ActivityResp, ReceiptItem } from '@ricepay/shared';
 
 export function useActivity(params: {
   address?: string; // 내 주소 있으면 toAddress 매칭으로 RECEIVED 계산

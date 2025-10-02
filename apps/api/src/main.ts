@@ -4,11 +4,28 @@ import { AppModule } from './module';
 import { ValidationPipe } from '@nestjs/common';
 import { json, urlencoded } from 'body-parser';
 
+const corsAllowed = (process.env.CORS_ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   app.setGlobalPrefix(process.env.GLOBAL_PREFIX!);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
-  app.enableCors({ origin: process.env.ALLOWED_ORIGINS! || 'http://localhost:3000' })
+  app.enableCors({
+    origin(origin, cb) {
+    // 모바일/서버 간 통신은 origin이 null/undefined일 수 있음 → 허용
+    if (!origin) return cb(null, true);
+
+    // 정확히 일치하는 origin만 허용 (URL 형태만 기대)
+    if (corsAllowed.includes(origin)) return cb(null, true);
+
+    // 그 외는 차단
+    return cb(new Error('CORS blocked'), false);
+    },
+    credentials: true
+  })
   app.use(json({ verify: (req: any, _res, buf) => (req.rawBody = buf) }));
   app.use(urlencoded({ extended: true }));
   await app.listen(process.env.PORT || 4000);

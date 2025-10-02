@@ -43,6 +43,55 @@ export class TxService {
     });
     const tx = this.toTxRecord(rec);
     this.stream.push(tx);
+
+    // ✅ 추가: 이미 CONFIRMED 상태였고, 지금 메타가 채워졌다면 여기서 영수증을 멱등 생성
+    if (tx.status === 'CONFIRMED') {
+      const already = await prisma.receipt.findUnique({
+        where: { transactionId: tx.id },
+        select: { id: true },
+      });
+
+      const essentialsReady =
+        !!tx.amount && !!tx.token &&
+        tx.from !== '0x0000000000000000000000000000000000000000' && tx.to !== '0x0000000000000000000000000000000000000000';
+
+      if (!already && essentialsReady) {
+        try {
+          const rateUsd = await this.fx.get('USD', 'MXN');
+          const policyVersion = this.fees.currentPolicyVersion();
+
+          await this.receipts.createSnapshot({
+            transactionId: tx.id,
+            chainId: tx.chainId,
+            network: tx.network,
+            txHash: tx.txHash,
+            direction: 'SENT',
+            token: tx.token!,
+            amount: String(tx.amount),
+            fiatCurrency: 'USD',
+            fiatRate: String(rateUsd.rate),
+            gasPaid: undefined,
+            gasFiatAmount: undefined,
+            appFee: undefined,
+            appFeeFiat: undefined,
+            policyVersion,
+            fromAddress: tx.from,
+            toAddress: tx.to,
+            submittedAt: rec.createdAt,
+            confirmedAt: rec.updatedAt ?? new Date(),
+            snapshot: {
+              source: 'upsertPending',
+              confirmations: tx.confirmations ?? null,
+              blockNumber: tx.blockNumber ?? null,
+              appVersion: process.env.APP_VERSION ?? null,
+            },
+          });
+        } catch {
+          // 조용히 무시(멱등/재시도는 크론이 커버)
+        }
+      }
+    }
+
     return tx;
   }
 
@@ -110,7 +159,10 @@ export class TxService {
     }
 
     if (!updated) return null;
-    const tx = this.toTxRecord(updated);
+
+    // ✅ 최신값으로 한 번 더 읽어 판단(다른 경합 업데이트 반영)
+    const fresh = await prisma.transaction.findUnique({ where: { id: updated.id } });
+    const tx = this.toTxRecord(fresh);
     this.stream.push(tx);
 
     // ===== 확정 분기: Receipt 1회 스냅샷 (멱등) =====
@@ -124,6 +176,7 @@ export class TxService {
         !!tx.amount && !!tx.token &&
         tx.from !== '0x0000000000000000000000000000000000000000' && tx.to !== '0x0000000000000000000000000000000000000000';
 
+      // ❗️필수값이 준비되지 않았다면 '지금은' 만들지 않음 (나중에 upsertPending/백필에서 생성)
       if (!already && essentialsReady) {
         try {
           const rateUsd = await this.fx.get("USD", "MXN");
@@ -151,6 +204,7 @@ export class TxService {
             submittedAt: updated.createdAt,
             confirmedAt: updated.updatedAt ?? new Date(),
             snapshot: {
+              source: "applyWebhookUpdate",
               eventId: input.eventId,
               confirmations: input.confirmations ?? null,
               blockNumber: input.blockNumber ?? null,

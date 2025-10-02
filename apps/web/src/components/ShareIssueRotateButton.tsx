@@ -59,7 +59,7 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
     const origin =
       originHost ??
       (typeof window !== "undefined" ? window.location.origin : undefined) ??
-      process.env.NEXT_PUBLIC_APP_ORIGIN ?? // 선택: .env에 정의해두면 SSR에서도 fallback
+      process.env.NEXT_PUBLIC_WEB_SIGN_ORIGIN ?? // 선택: .env에 정의해두면 SSR에서도 fallback
       "http://localhost:3000";
 
     const message = [
@@ -111,7 +111,7 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
   }
 
   const shareUrl = token
-    ? `${process.env.NEXT_PUBLIC_APP_ORIGIN ?? "http://localhost:3000"}/external/${token}`
+    ? `${process.env.NEXT_PUBLIC_WEB_SIGN_ORIGIN ?? "http://localhost:3000"}/external/${token}`
     : null;
 
   async function copy() {
