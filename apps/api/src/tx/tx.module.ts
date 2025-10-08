@@ -11,6 +11,7 @@ import { MaintenanceGuard } from '../common/guards/maintenance.guard';
 import { FeesService } from '../fees/fees.service';
 import { FxModule } from '../fx/fx.module';
 import { ReceiptModule } from '../receipt/receipt.module';
+import { ComplianceModule } from '../compliance/compliance.module';
 
 /**
  * TxModule
@@ -24,7 +25,7 @@ import { ReceiptModule } from '../receipt/receipt.module';
  *    프라이빗 키나 송금 집행은 일절 하지 않음.
  */
 @Module({
-  imports: [FxModule, ScheduleModule, ReceiptModule],
+  imports: [FxModule, ScheduleModule, ReceiptModule, ComplianceModule],
   providers: [TxService, TxStream, TxCron, TxCleanupCron, MaintenanceGuard, FeesService],
   controllers: [TxController, TxReindexController, TxCleanupController],
   exports: [TxService, TxStream],

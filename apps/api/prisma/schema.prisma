@@ -70,3 +70,61 @@ model ReceiptAudit {
 
   @@index([receiptId])
 }
+
+model SanctionedAddress {
+  id        String   @id @default(cuid())
+  chain     String
+  address   String
+  checksum  String   // ✅ EIP-55 정규화 주소(검증용)
+  source    String   // "OFAC" | "EU" | "UN" | "TRM" | "MANUAL" ...
+  reason    String?
+  version   String?  // 외부 동기화 버전 태깅(추적성)
+  updatedAt DateTime @updatedAt @default(now())
+  createdAt DateTime @default(now())
+  @@index([chain, address])
+  @@unique([chain, address])
+}
+
+model BlockedCountry {
+  code      String   @id // ISO-3166-1 alpha-2
+  reason    String?
+  updatedAt DateTime @updatedAt @default(now())
+  createdAt DateTime @default(now())
+}
+
+model BlockedRegion {
+  id        String   @id @default(cuid())
+  country   String   // 예: "UA"
+  region    String   // 예: "Crimea" | "Donetsk" | "Luhansk"
+  pattern   String?  // 공급자별 지역 코드/이름 패턴(정규식)
+  reason    String?
+  updatedAt DateTime @updatedAt @default(now())
+  createdAt DateTime @default(now())
+  @@index([country, region])
+}
+
+model ComplianceAudit {
+  id        String   @id @default(cuid())
+  type      String   // "GEOFENCE" | "SANCTIONS"
+  status    String   // "ALLOWED" | "BLOCKED"
+  rule      String?  // "COUNTRY:IR" | "REGION:UA/Crimea" | "ADDR:OFAC"
+  version   String?  // 리스트 버전/스냅샷
+  chain     String?
+  address   String?
+  ip        String?
+  country   String?
+  region    String?
+  route     String?
+  userId    String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  @@index([type, status, createdAt])
+}
+
+model SyncState {
+  key               String   @id   // "SANCTIONS/PROVIDER"
+  version           String?
+  consecutiveNoop   Int      @default(0)       // 👈 연속 0건 카운터
+  updatedAt         DateTime @updatedAt @default(now())
+  createdAt         DateTime @default(now())
+}

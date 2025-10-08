@@ -12,6 +12,7 @@ import { AlchemyWebhookController } from './webhooks/alchemy.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReceiptModule } from './receipt/receipt.module';
 import { AuthController } from './auth/auth.controller';
+import { ComplianceModule } from './compliance/compliance.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { AuthController } from './auth/auth.controller';
     // - 앱 전체에서 스케줄 기반 잡을 사용할 수 있도록 전역 환경을 구성
     ScheduleModule.forRoot(),
     ReceiptModule,
+    ComplianceModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }, // ✅ 전역 가드 활성화
