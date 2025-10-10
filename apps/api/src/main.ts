@@ -24,7 +24,15 @@ async function bootstrap() {
     // 그 외는 차단
     return cb(new Error('CORS blocked'), false);
     },
-    credentials: true
+    credentials: true,
+    // ✅ 커스텀 헤더를 허용해야 cf-ipcountry, cf-region이 전달됨
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      ...(process.env.ALLOW_DEV_HEADERS === 'true'
+        ? ['cf-ipcountry', 'cf-region']
+        : []),
+    ],
   })
   app.use(json({ verify: (req: any, _res, buf) => (req.rawBody = buf) }));
   app.use(urlencoded({ extended: true }));

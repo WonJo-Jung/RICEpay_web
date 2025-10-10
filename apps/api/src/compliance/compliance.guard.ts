@@ -90,7 +90,7 @@ export class ComplianceGuard implements CanActivate {
         if (e.status === HttpStatus.FORBIDDEN) throw e;
         // 운영에서 보수적으로 막고 싶다면 503으로 명확히 반환
         throw new HttpException(
-          { ok: false, type: 'SANCTIONS', error: 'provider_unavailable' },
+          { ok: false, type: 'SANCTIONS', reason: 'provider_unavailable' },
           HttpStatus.SERVICE_UNAVAILABLE, // 503
         );
       }

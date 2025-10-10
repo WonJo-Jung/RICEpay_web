@@ -19,7 +19,7 @@
     "@nestjs/schedule": "^6.0.1",
     "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^5.16.1",
-    "@ricepay/shared": "github:WonJo-Jung/RICEpay_shared#2f6266678c9a6318831c2d714edee3620ad5ba81",
+    "@ricepay/shared": "github:WonJo-Jung/RICEpay_shared",
     "@types/body-parser": "^1.19.6",
     "axios": "^1.12.2",
     "body-parser": "^2.2.0",

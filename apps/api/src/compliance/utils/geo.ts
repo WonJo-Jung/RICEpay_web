@@ -22,6 +22,9 @@ export type GeoResult = { country?: string | null; region?: string | null };
 /**
  * Cloudflare 프록시 뒤라면 모든 요청에 'CF-IPCountry' 헤더가 옴.
  * (선택) Workers 등에서 region/city를 커스텀 헤더로 넣었다면 opts로 지정 가능.
+ * 
+ * 로컬 개발 시, ALLOW_DEV_HEADERS=true 환경변수가 설정되어 있으면
+ * 프론트엔드에서 cf-ipcountry / cf-region 헤더를 수동 주입하여 테스트 가능.
  */
 export function extractGeoFromHeaders(
   headers: Record<string, unknown>,
@@ -29,18 +32,56 @@ export function extractGeoFromHeaders(
 ): GeoResult {
   const h2 = normalizeHeaderKeys(headers);
 
-  // 기본 헤더 키 (소문자 비교용)
+  // 기본 헤더 키
   const countryKey = (opts?.countryHeader || 'cf-ipcountry').toLowerCase();
-  const regionKey =
-    (opts?.regionHeader ||
-      // Workers에서 set한 커스텀 헤더를 지원하려면 아래 중 하나를 사용
-      'cf-region') // 필요 시 'x-region-code'와 같이 바꿔 사용
-      .toLowerCase();
+  const regionKey = (opts?.regionHeader || 'cf-region').toLowerCase();
 
-  const country = asString(h2[countryKey])?.toUpperCase() || undefined;
-  const region = asString(h2[regionKey]) || undefined;
+  // Cloudflare 기준
+  const cfCountry = asString(h2[countryKey])?.toUpperCase();
+  const cfRegion = asString(h2[regionKey]);
 
-  return { country, region };
+  // Cloudflare 통과 여부 추정 (대표 헤더)
+  const fromCloudflare =
+    !!h2['cf-ray'] || !!h2['cf-connecting-ip'] || !!h2['cdn-loop'];
+
+  // 개발용 오버라이드 플래그
+  const allowDev = process.env.ALLOW_DEV_HEADERS === 'true';
+
+  // 호스트 기반으로 로컬 개발 여부도 보조 판단
+  const host = asString(h2['host']) || '';
+  const isLocalHost =
+    host.includes('localhost') ||
+    host.startsWith('127.') ||
+    host.includes('.local') ||
+    host.includes('192.168.') ||
+    host.includes('10.');
+
+  // 최종 선택 로직
+  if (fromCloudflare) {
+    // Cloudflare 환경 → 신뢰하고 그대로 사용
+    return {
+      country: cfCountry || undefined,
+      region: cfRegion || undefined,
+    };
+  }
+
+  if (allowDev && isLocalHost) {
+    // 로컬 개발 환경 → 프론트에서 보낸 헤더 오버라이드 허용
+    if (cfCountry || cfRegion) {
+      console.warn(
+        '[extractGeoFromHeaders] ⚠️ Using dev geo override:',
+        cfCountry,
+        cfRegion
+      );
+      return {
+        country: cfCountry || undefined,
+        region: cfRegion || undefined,
+      };
+    }
+  }
+
+  // Cloudflare도 아니고 dev 오버라이드도 없는 경우
+  return { country: undefined, region: undefined };
 }
 
 function normalizeHeaderKeys(headers: Record<string, unknown>): Record<string, unknown> {

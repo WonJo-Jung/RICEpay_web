@@ -19,18 +19,23 @@ export class ComplianceController {
     }
 
     if (process.env.SANCTIONS_ENABLED === 'true' && dto?.chain && dto?.to) {
-      const s = await this.sanc.isBlocked(dto.chain, dto.to);
-
-      if (s.blocked) {
-        return {
-          ok: false,
-          type: 'SANCTIONS',
-          reason: s.reason,
-          checksum: s.checksum, // ✅ 프론트에서 신뢰성 있는 주소 표시용
-        };
+      try {
+        const s = await this.sanc.isBlocked(dto.chain, dto.to);
+  
+        if (s.blocked) {
+          return {
+            ok: false,
+            type: 'SANCTIONS',
+            reason: s.reason,
+            checksum: s.checksum, // ✅ 프론트에서 신뢰성 있는 주소 표시용
+          };
+        }
+        // 허용인 경우에도 checksum을 내려주면 프론트 표시/검증에 유용함 ✅
+        return { ok: true, checksum: s.checksum };
+      } catch {
+        // 운영에서 보수적으로 막고 싶다면 503으로 명확히 반환
+        return { ok: false, type: 'SANCTIONS', reason: 'provider_unavailable' };
       }
-      // 허용인 경우에도 checksum을 내려주면 프론트 표시/검증에 유용함 ✅
-      return { ok: true, checksum: s.checksum };
     }
 
     return { ok: true };

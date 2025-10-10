@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 import { useUSDC } from "../hooks/useUSDC";
 import { useTxStatus } from "../hooks/useTxStatus";
 import TxStatusBadge from "../components/TxStatusBadge";
+import { ComplianceErrorBody, TxRecord } from "@ricepay/shared";
 
 export default function SendUSDCForm() {
   const { address, isConnected } = useAccount();
@@ -24,6 +25,11 @@ export default function SendUSDCForm() {
   const [amt, setAmt] = useState("0");
   const [isSending, setIsSending] = useState(false);
   const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
+  const [result, setResult] = useState<
+    | { kind: "success"; record: TxRecord }
+    | { kind: "error"; status: number; data: ComplianceErrorBody }
+    | null
+  >(null);
 
   const {
     record: txRecord,
@@ -73,12 +79,60 @@ export default function SendUSDCForm() {
   const onSend = async () => {
     try {
       setIsSending(true);
-      const h = await transfer(to, amt);
+      const { hash: h, result: r } = await transfer(to, amt);
       setHash(h);
+      setResult(r);
     } finally {
       setIsSending(false);
     }
   };
+
+  const resultBanner = useMemo(() => {
+    if (!result) return null;
+
+    if (result.kind === "success") {
+      return <div>트랜잭션 접수 완료 (201)</div>;
+    }
+
+    const { status, data } = result;
+    const { type, reason } = data;
+
+    if (status === 451 && type === "GEOFENCE") {
+      return (
+        <div>
+          <div>법적 사유(지오펜싱)으로 요청이 거부되었습니다 (451)</div>
+          <div>사유: {reason ?? "unavailable_for_legal_reasons"}</div>
+        </div>
+      );
+    }
+    if (status === 403 && type === "SANCTIONS" && "checksum" in data) {
+      return (
+        <div>
+          <div>제재리스트 매칭으로 거부되었습니다 (403)</div>
+          <div>사유: {reason ?? "sanctions_hit"}</div>
+          {data.checksum && <div>주소 체크섬: {data.checksum}</div>}
+        </div>
+      );
+    }
+    if (
+      status === 503 &&
+      type === "SANCTIONS" &&
+      reason === "provider_unavailable"
+    ) {
+      return (
+        <div>
+          <div>제재 제공자 일시 장애 (503)</div>
+          <div>잠시 후 다시 시도해 주세요.</div>
+        </div>
+      );
+    }
+    return (
+      <div>
+        <div>요청 실패 (HTTP {status})</div>
+        <pre>{JSON.stringify(data, null, 2)}</pre>
+      </div>
+    );
+  }, [result]);
 
   return (
     <div>
@@ -137,6 +191,8 @@ export default function SendUSDCForm() {
           <span>msg: {txState.errMsg}</span>
         </div>
       )}
+
+      {resultBanner}
     </div>
   );
 }
