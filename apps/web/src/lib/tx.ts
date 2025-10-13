@@ -19,10 +19,15 @@ export async function txPost<T>(path: string, input: any) {
   return { status: res.status, ok: res.ok, data } as { status: number; ok: boolean; data: T };
 }
 
+export type ComplianceResult = 
+  | { kind: "success"; record: TxRecord, msg: string }
+  | { kind: "error"; status: number; data: ComplianceErrorBody, msg: string }
+  | null
+
 export type TransferResult = {
-  hash: `0x${string}`, result: { kind: 'success'; record: TxRecord } 
+  hash: `0x${string}`, compliance: ComplianceResult
 } | {
-  hash?: `0x${string}`, result: { kind: 'error'; status: number; data: ComplianceErrorBody }
+  hash?: `0x${string}`, compliance: ComplianceResult
 }
 
 function devGeoHeaders(country = "KR", region = ""): Record<string, string> {

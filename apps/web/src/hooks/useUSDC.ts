@@ -1,7 +1,7 @@
 "use client"
 
 import { Dispatch, SetStateAction, useCallback } from 'react'
-import { erc20Abi, assertAddress, toUserMessage, withRetry, PreflightResponse, TxRecord, ComplianceErrorBody } from '@ricepay/shared'
+import { erc20Abi, assertAddress, toUserMessage, withRetry, PreflightResponse, TxRecord, ComplianceErrorBody, getComplianceMessage } from '@ricepay/shared'
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { parseUnits, formatUnits, formatEther, parseAbiItem } from 'viem'
 import { BASE_SEPOLIA } from '@ricepay/shared'
@@ -62,7 +62,7 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
         if (status === 200 && pre && pre.ok === false) {
           if (pre.type === 'GEOFENCE') {
             return {
-              result: {
+              compliance: {
                 kind: 'error',
                 status: 451,
                 data: {
@@ -73,24 +73,27 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
                   region: pre.region ?? null,
                   level: pre.region ? "REGION" : "COUNTRY"
                 },
+                msg: getComplianceMessage("preflight", 451, "ko")
               }
             };
           } else if ("checksum" in pre) {
             // type === 'SANCTIONS'
             return {
-              result: {
+              compliance: {
                 kind: 'error',
                 status: 403,
                 data: pre,
+                msg: getComplianceMessage("preflight", 403, "ko")
               }
             };
           } else {
             // type === 'SANCTIONS'
             return {
-              result: {
+              compliance: {
                 kind: 'error',
                 status: 503,
                 data: pre,
+                msg: getComplianceMessage("preflight", 503, "ko")
               }
             };
           }
@@ -161,6 +164,8 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
         }
 
         setTxState(summary)
+
+        // 트랜잭션 테이블에 기록(/tx). 서버 가드가 최종 판정(451/403/503,201).
         const res = await txPost<TxRecord | ComplianceErrorBody>('/tx', {
           txHash: hash,
           from,
@@ -172,14 +177,17 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
         });
 
         if (res.ok && (res.status === 200 || res.status === 201)) {
-          return { hash, result: { kind: 'success', record: res.data as TxRecord } };
+          return { hash, compliance: { kind: 'success', record: res.data as TxRecord, msg: getComplianceMessage("complianceGuard", 201, "ko") } };
         } else {
+          const d = (res.data as ComplianceErrorBody);
+          const code = d.type === "GEOFENCE" ? 451 : "checksum" in d ? 403 : 503;
           return {
             hash,
-            result: {
+            compliance: {
               kind: 'error',
               status: res.status,
-              data: (res.data as ComplianceErrorBody),
+              data: d,
+              msg: getComplianceMessage("complianceGuard", code, "ko")
             }
           };
         }
