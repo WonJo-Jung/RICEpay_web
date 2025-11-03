@@ -2,9 +2,9 @@ import { Injectable, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { createPublicClient, http, encodeFunctionData } from 'viem';
-import { base, baseSepolia } from 'viem/chains';
 import { PreviewDto } from './preview.dto';
 import { calcFeeUsd, readPolicy, tokenIntToUsd, usdToTokenIntCeil } from './fee-policy.util';
+import { chains } from '../lib/viem';
 
 const USDC_ABI = [
   { "type":"function","name":"transfer","stateMutability":"nonpayable",
@@ -14,6 +14,7 @@ const USDC_ABI = [
 // Base 체인 가정
 const NATIVE_SYMBOL = 'ETH';
 const NETWORK_NAME = 'Base';
+const DECIMALS = 6;
 
 @Injectable()
 export class FeesService {
@@ -29,9 +30,11 @@ export class FeesService {
     };
   }
 
-  private CHAIN = (id: number) => (id === base.id ? base : baseSepolia);
-  private RPC = (id: number) =>
-    id === base.id ? process.env.CHAIN_BASE_MAINNET_RPC! : process.env.CHAIN_BASE_SEPOLIA_RPC!;
+  async fee(amountInt: bigint): Promise<number> {
+    const { usdcUsd } = await this.quotes();
+    const sendUsd = tokenIntToUsd(amountInt, usdcUsd, DECIMALS);
+    return calcFeeUsd(sendUsd, this.policy);
+  }
 
   // ✅ 짧은 재시도 + 타임아웃 래퍼
   private async withRetry<T>(fn: () => Promise<T>, tries = 2, timeoutMs = Number(process.env.RPC_TIMEOUT_MS ?? 2500)): Promise<T> {
@@ -75,10 +78,9 @@ export class FeesService {
     if (hit) return hit; // ✅ 15s 캐시 히트 시 즉시 반환
 
     const chainId = Number(q.chainId);
-    const chain = this.CHAIN(chainId);
-    const client = createPublicClient({ chain, transport: http(this.RPC(chainId)) });
+    const chain = chains[q.chainId];
+    const client = createPublicClient({ chain, transport: http(chain.rpcUrls.default.http[0]) });
 
-    const decimals = 6;
     const amountInt = BigInt(q.amount);
 
     const data = encodeFunctionData({
@@ -102,19 +104,18 @@ export class FeesService {
 
     const { usdcUsd, nativeUsd, source } = await this.quotes();
 
-    const sendUsd = tokenIntToUsd(amountInt, usdcUsd, decimals);
     const gasUsd = (Number(gasNativeWei) / 1e18) * nativeUsd;
 
-    const feeUsd = calcFeeUsd(sendUsd, this.policy);
-    const feeInt = usdToTokenIntCeil(feeUsd, usdcUsd, decimals);
+    const feeUsd = await this.fee(amountInt);
+    const feeInt = usdToTokenIntCeil(feeUsd, usdcUsd, DECIMALS);
 
     const receiver = amountInt - feeInt;
 
     const response = {
       // 📌 요청 체인 정보
-      chainId: q.chainId,       // 사용자가 요청한 체인 ID (8453=Base Mainnet, 84532=Base Sepolia)
+      chainId: q.chainId,       // 사용자가 요청한 체인 ID
       token: q.token,           // 송금할 토큰 주소 (예: USDC 컨트랙트 주소)
-      decimals,                 // 토큰 소수점 자리수 (USDC=6)
+      decimals: DECIMALS,                 // 토큰 소수점 자리수 (USDC=6)
       amount: q.amount,         // 송금자가 입력한 총 송금 금액 (토큰 정수 단위)
 
       // 📌 RICE Pay 수수료 (송금 금액에서 차감)

@@ -1,13 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import ShareRevokeButton from "./ShareRevokeButton";
-import { BASE_SEPOLIA } from "@ricepay/shared";
 import { getNonce } from "../lib/address";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
 const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
-const chainId = BASE_SEPOLIA.id;
 
 export default function ShareIssueRotateButton({ id }: { id: string }) {
   const [token, setToken] = useState<string | null>(null);
@@ -17,6 +15,7 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
   const [err, setErr] = useState<string | null>(null);
   const { data: wallet } = useWalletClient();
   const [originHost, setOriginHost] = useState<string | null>(null);
+  const { chainId } = useAccount();
 
   // 브라우저에서만 origin 설정
   useEffect(() => {

@@ -7,7 +7,7 @@ import TxStatusBadge from "../components/TxStatusBadge";
 import { ComplianceResult } from "../lib/tx";
 
 export default function SendUSDCForm() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const [txState, setTxState] = useState<{
     status: "pending" | "success" | "failed";
     hash: `0x${string}`;
@@ -75,7 +75,7 @@ export default function SendUSDCForm() {
   const onSend = async () => {
     try {
       setIsSending(true);
-      const { hash: h, compliance: c } = await transfer(to, amt);
+      const { hash: h, compliance: c } = await transfer(to, amt, chainId);
       setHash(h);
       setCompliance(c);
     } finally {

@@ -3,9 +3,9 @@ const ONE = (d: number) => BigInt(10) ** BigInt(d);
 export type FeePolicy = { pct: number; minUsd: number; maxUsd: number; };
 
 export const readPolicy = (): FeePolicy => ({
-  pct: Number(process.env.RICE_FEE_PCT ?? 0.003),
-  minUsd: Number(process.env.RICE_FEE_MIN_USD ?? 0.30),
-  maxUsd: Number(process.env.RICE_FEE_MAX_USD ?? 5.00),
+  pct: Number(process.env.RICE_FEE_PCT ?? 0.0039),
+  minUsd: Number(process.env.RICE_FEE_MIN_USD ?? 0.25),
+  maxUsd: Number(process.env.RICE_FEE_MAX_USD ?? 3.90),
 });
 
 export const calcFeeUsd = (sendUsd: number, p: FeePolicy) =>

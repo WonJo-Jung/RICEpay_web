@@ -3,14 +3,19 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
-    "start": "next start -p 3000",
+    "build:dev": "dotenv -e .env.dev -- next build",
+    "start:dev": "dotenv -e .env.dev -- next start -p 3000",
+    "build:prod": "dotenv -e .env.prod -- next build",
+    "start:prod": "dotenv -e .env.prod -- next start -p 3000",
     "lint": "next lint"
   },
   "dependencies": {
+    "@reown/appkit": "^1.7.18",
+    "@reown/appkit-adapter-wagmi": "^1.7.18",
     "@ricepay/shared": "github:WonJo-Jung/RICEpay_shared#main",
-    "@ricepay/web-lib": "workspace:^",
     "@tanstack/react-query": "^5.51.0",
+    "decimal.js": "^10.6.0",
+    "dotenv-cli": "^10.0.0",
     "localforage": "^1.10.0",
     "next": "14.2.5",
     "react": "18.2.0",
@@ -25,6 +30,7 @@
   "devDependencies": {
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
+    "@types/react-dom": "18",
     "typescript": "^5.5.4"
   }
 }

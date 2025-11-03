@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAddressBook } from "../hooks/useAddressBook";
-import type { AddressBookEntry, Network } from "@ricepay/shared";
+import type { AddressBookEntry, Chain } from "@ricepay/shared";
 import { normalizeEvmAddress } from "@ricepay/shared";
 import toast, { Toaster } from "react-hot-toast";
+import { alchemyChains } from "../lib/viem";
 
-const NETWORK_OPTIONS: Network[] = ["BASE_SEPOLIA"];
 type SortKey = "recent" | "name";
 
 export default function AddressBookPanel() {
   // 리스트 훅 (필터 연동)
   const [query, setQuery] = useState("");
-  const [filterNet, setFilterNet] = useState<Network | undefined>(undefined);
+  const [filterChain, setFilterChain] = useState<Chain | undefined>(undefined);
   const {
     items,
     loading,
@@ -21,11 +21,15 @@ export default function AddressBookPanel() {
     remove,
     markUsed,
     reload,
-  } = useAddressBook({ query, network: filterNet });
+  } = useAddressBook({ query, chain: filterChain });
 
   // 폼 상태
   const [name, setName] = useState("");
-  const [network, setNetwork] = useState<Network>("BASE_SEPOLIA");
+  const [chain, setChain] = useState<Chain>(
+    process.env.NEXT_PUBLIC_CHAIN_ENVIRONMENT === "PROD"
+      ? "Base"
+      : "Base Sepolia Testnet"
+  );
   const [address, setAddress] = useState("");
   const [memo, setMemo] = useState("");
   const [consent, setConsent] = useState(false);
@@ -79,7 +83,7 @@ export default function AddressBookPanel() {
     try {
       await create({
         name: lastDeleted.name,
-        network: lastDeleted.network,
+        chain: lastDeleted.chain,
         address: lastDeleted.address,
         memo: lastDeleted.memo ?? "",
       });
@@ -125,7 +129,7 @@ export default function AddressBookPanel() {
       }
       await create({
         name: name.trim(),
-        network,
+        chain,
         address: checksum,
         memo: memo.trim(),
       });
@@ -176,17 +180,19 @@ export default function AddressBookPanel() {
         </label>
 
         <label style={styles.label}>
-          <span>네트워크</span>
+          <span>체인</span>
           <select
             style={styles.input}
-            value={network}
-            onChange={(e) => setNetwork(e.target.value as Network)}
+            value={chain}
+            onChange={(e) => setChain(e.target.value as Chain)}
           >
-            {NETWORK_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {n[0] + n.slice(1).toLowerCase()}
-              </option>
-            ))}
+            {Object.values(alchemyChains)
+              .map((c) => c.label)
+              .map((n) => (
+                <option key={n} value={n}>
+                  {n[0] + n.slice(1).toLowerCase()}
+                </option>
+              ))}
           </select>
         </label>
 
@@ -250,17 +256,19 @@ export default function AddressBookPanel() {
         />
         <select
           style={styles.input}
-          value={filterNet ?? ""}
+          value={filterChain ?? ""}
           onChange={(e) =>
-            setFilterNet((e.target.value || undefined) as Network | undefined)
+            setFilterChain((e.target.value || undefined) as Chain | undefined)
           }
         >
-          <option value="">전체 네트워크</option>
-          {NETWORK_OPTIONS.map((n) => (
-            <option key={n} value={n}>
-              {n[0] + n.slice(1).toLowerCase()}
-            </option>
-          ))}
+          <option value="">전체 체인</option>
+          {Object.values(alchemyChains)
+            .map((c) => c.label)
+            .map((n) => (
+              <option key={n} value={n}>
+                {n[0] + n.slice(1).toLowerCase()}
+              </option>
+            ))}
         </select>
         <select
           className="border rounded px-3 py-2"
@@ -310,7 +318,7 @@ export default function AddressBookPanel() {
                 <div style={{ display: "grid", gap: 4 }}>
                   <b>{e.name}</b>
                   <span style={{ fontSize: 12, color: "#6b7280" }}>
-                    {e.network} · {e.address} · {e.memo}
+                    {e.chain} · {e.address} · {e.memo}
                   </span>
                   <span style={{ fontSize: 12, color: "#6b7280" }}>
                     사용횟수 {e.usageCount}

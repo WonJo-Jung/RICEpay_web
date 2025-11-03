@@ -1,13 +1,8 @@
-import { Body, Controller, Headers, Post, Req, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Headers, Param, Post, Req, UnauthorizedException } from '@nestjs/common';
 import { TxService } from '../tx/tx.service';
 import { verifyAlchemySignature } from '../common/verify-alchemy-signature';
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
-
-const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(process.env.CHAIN_BASE_SEPOLIA_RPC!), // ex: https://base-sepolia.g.alchemy.com/v2/<KEY>
-});
+import { chains } from '../lib/viem';
 
 @Controller('/webhooks/alchemy')
 export class AlchemyWebhookController {
@@ -19,6 +14,9 @@ export class AlchemyWebhookController {
     @Headers('x-alchemy-signature') signature: string,
     @Body() payload: any,
   ) {
+    const chain = chains[payload.event.network];
+    if (!chain) throw new BadRequestException('unsupported chain');
+
     const secret = process.env.ALCHEMY_WEBHOOK_SECRET!;
     const raw = req.rawBody; // ✅ raw 그대로 (toString 금지)
     if (!verifyAlchemySignature(raw, signature, secret)) {
@@ -38,6 +36,10 @@ export class AlchemyWebhookController {
     // 3) 컨펌 수가 없고, 블록번호가 있으면 계산(확정 시 1+)
     if (status === 'CONFIRMED' && blockNumber != null && confirmations == null) {
       try {
+        const publicClient = createPublicClient({
+          chain,
+          transport: http(process.env.CHAIN_RPC!),
+        });
         const head = await publicClient.getBlockNumber();
         const computed = Number(head) - Number(blockNumber) + 1;
         confirmations = Math.max(computed, 1);
@@ -49,6 +51,7 @@ export class AlchemyWebhookController {
     // 4) 여러 해시에 대해 idempotent 업데이트
     for (const h of hashes) {
       await this.tx.applyWebhookUpdate({
+        chainId: chain.id,
         eventId: eventId ?? `evt-${h}-${Date.now()}`,
         txHash: h, // 소문자 정규화는 서비스에서 처리
         status,

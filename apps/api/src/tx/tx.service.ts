@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { BASE_SEPOLIA, type TxRecord } from '@ricepay/shared';
+import type { TxRecord } from '@ricepay/shared';
 import { TxStream } from './tx.stream';
 import { ReceiptService } from '../receipt/receipt.service';
 import { FxService } from '../fx/fx.service';
 import { FeesService } from '../fees/fees.service';
 import { prisma } from '../lib/db';
+import { chains } from '../lib/viem';
 
 const norm = (h: string) => h.toLowerCase() as `0x${string}`;
 
@@ -20,6 +21,7 @@ export class TxService {
   async upsertPending(dto: {
     txHash: string; from: string; to: string;
     token?: string; amount?: string; chainId: number;
+    gasPaid: string;
   }): Promise<TxRecord> {
     const txHash = norm(dto.txHash);
     const rec = await prisma.transaction.upsert({
@@ -37,7 +39,7 @@ export class TxService {
         token: dto.token ?? null,
         amount: dto.amount ?? null,
         chainId: dto.chainId,
-        network: 'BASE_SEPOLIA',
+        chain: chains[dto.chainId].name,
         status: 'PENDING',
       },
     });
@@ -59,26 +61,29 @@ export class TxService {
         try {
           const rateUsd = await this.fx.get('USD', 'MXN');
           const policyVersion = this.fees.currentPolicyVersion();
+          const feeUsd = await this.fees.fee(BigInt(Math.round(Number(dto.amount) * 1e6)));
 
           await this.receipts.createSnapshot({
             transactionId: tx.id,
             chainId: tx.chainId,
-            network: tx.network,
+            chain: tx.chain,
             txHash: tx.txHash,
             direction: 'SENT',
             token: tx.token!,
             amount: String(tx.amount),
             fiatCurrency: 'USD',
+            quoteCurrency: 'MXN',
             fiatRate: String(rateUsd.rate),
-            gasPaid: undefined,
-            gasFiatAmount: undefined,
-            appFee: undefined,
-            appFeeFiat: undefined,
+            gasPaid: dto.gasPaid,
+            gasFiatAmount: String(Number(dto.gasPaid) * Number(process.env.FIXED_ETH_USD ?? 2580) * rateUsd.rate),
+            appFee: String(feeUsd),
+            appFeeFiat: String(feeUsd * rateUsd.rate),
             policyVersion,
             fromAddress: tx.from,
             toAddress: tx.to,
             submittedAt: rec.createdAt,
             confirmedAt: rec.updatedAt ?? new Date(),
+            shareToken: undefined,
             snapshot: {
               source: 'upsertPending',
               confirmations: tx.confirmations ?? null,
@@ -103,6 +108,7 @@ export class TxService {
   }
 
   async applyWebhookUpdate(input: {
+    chainId: number;
     eventId: string;
     txHash: string;
     status: 'CONFIRMED' | 'FAILED' | 'DROPPED_REPLACED';
@@ -122,6 +128,7 @@ export class TxService {
     let updated = await prisma.transaction.update({
       where: { txHash },
       data: {
+        chainId: input.chainId,
         status: input.status,
         blockNumber: input.blockNumber ?? null,
         confirmations: input.confirmations ?? null,
@@ -147,8 +154,8 @@ export class TxService {
           to:   '0x0000000000000000000000000000000000000000',
           token: null,
           amount: null,
-          chainId: BASE_SEPOLIA.id, // 또는 payload/환경에서 추론
-          network: 'BASE_SEPOLIA',
+          chainId: input.chainId, // 또는 payload/환경에서 추론
+          chain: chains[input.chainId].name,
           status: input.status,
           blockNumber: input.blockNumber ?? null,
           confirmations: input.confirmations ?? null,
@@ -185,7 +192,7 @@ export class TxService {
           await this.receipts.createSnapshot({
             transactionId: tx.id,
             chainId: tx.chainId,
-            network: tx.network,
+            chain: tx.chain,
             txHash: tx.txHash,
             // 비수탁 송금/결제 기능에선 SENT로 고정이나 추후 온/오프램프 및 수탁 기능 확장시
             // fromAddress(송금인) 정보가 없어 RECEIVED로 저장되어야 함
@@ -193,16 +200,18 @@ export class TxService {
             token: tx.token!,
             amount: String(tx.amount),
             fiatCurrency: 'USD',
+            quoteCurrency: 'MXN',
             fiatRate: String(rateUsd.rate),
             gasPaid: updated.gasPaid ? String(updated.gasPaid) : undefined,
-            gasFiatAmount: updated.gasPaid ? String(updated.gasPaid * rateUsd.rate) : undefined,
+            gasFiatAmount: updated.gasPaid ? String(Number(updated.gasPaid) * Number(process.env.FIXED_ETH_USD ?? 2580) * rateUsd.rate) : undefined,
             appFee: updated.appFee ? String(updated.appFee) : undefined,
-            appFeeFiat: updated.appFee ? String(updated.appFee * rateUsd.rate) : undefined,
+            appFeeFiat: updated.appFee ? String(Number(updated.appFee) * rateUsd.rate) : undefined,
             policyVersion,
             fromAddress: tx.from,
             toAddress: tx.to,
             submittedAt: updated.createdAt,
             confirmedAt: updated.updatedAt ?? new Date(),
+            shareToken: undefined,
             snapshot: {
               source: "applyWebhookUpdate",
               eventId: input.eventId,
@@ -225,7 +234,7 @@ export class TxService {
     return {
       id: r.id,
       chainId: r.chainId,
-      network: r.network,
+      chain: r.chain,
       txHash: r.txHash,
       from: r.from,
       to: r.to,

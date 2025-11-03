@@ -1,12 +1,10 @@
 "use client";
-import { BASE_SEPOLIA } from "@ricepay/shared";
 import { useEffect, useState } from "react";
-import { useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { getNonce } from "../lib/address";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
 const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
-const chainId = BASE_SEPOLIA.id;
 
 export default function ShareRevokeButton({
   id,
@@ -17,6 +15,7 @@ export default function ShareRevokeButton({
   currentToken: string | null;
   onRevoked?: () => void;
 }) {
+  const { chainId } = useAccount();
   const { data: wallet } = useWalletClient();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);

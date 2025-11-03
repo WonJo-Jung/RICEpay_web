@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usdcToInt } from '../lib/fees';
 import { useFeePreview } from './useFeePreview';
-import { BASE_SEPOLIA } from '@ricepay/shared';
 import { useAccount } from 'wagmi';
 import { isAddress } from 'viem';
 
@@ -19,8 +18,8 @@ function useDebounce<T>(value: T, delay = 350) {
 export function useSendPreview() {
   const [to, setTo] = useState<string>('받는 주소(0x...)');
   const [amount, setAmount] = useState('보낼 금액 (USDC)');
+  const { chainId } = useAccount();
 
-  const chainId = BASE_SEPOLIA.id;
   const { address: from } = useAccount();
   const connected = !!from;
   const token = process.env.NEXT_PUBLIC_USDC_ADDR as `0x${string}`;

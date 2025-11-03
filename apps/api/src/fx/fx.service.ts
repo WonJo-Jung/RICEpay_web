@@ -13,16 +13,16 @@ export class FxService {
   constructor(
     @Inject(CACHE_MANAGER) private cache: Cache,
     private cfg: ConfigService,
-    private frank: FrankfurterProvider,
     private oxr: OxrProvider,
+    private frank: FrankfurterProvider,
   ) {}
 
   private key(b: Currency, q: Currency) { return `fx:${b}:${q}`; }
 
   private selectProviders(): RateProvider[] {
-    const p = (this.cfg.get('FX_PRIMARY') ?? 'FRANKFURTER').toUpperCase();
-    const f = (this.cfg.get('FX_FALLBACK') ?? '').toUpperCase();
-    const map: Record<string, RateProvider> = { FRANKFURTER: this.frank, OXR: this.oxr };
+    const p = (this.cfg.get('FX_PRIMARY')).toUpperCase();
+    const f = (this.cfg.get('FX_FALLBACK')).toUpperCase();
+    const map: Record<string, RateProvider> = { OXR: this.oxr, FRANKFURTER: this.frank };
     const list: RateProvider[] = [];
     if (map[p]) list.push(map[p]);
     if (f && map[f]) list.push(map[f]);

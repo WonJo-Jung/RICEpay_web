@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ConnectButton } from "@ricepay/web-lib";
+import ConnectButton from "../components/ConnectButton";
 import SendUSDCForm from "../components/SendUSDCForm";
 import FxCard from "../components/FxCard";
 import { fetchUsdMxnServer } from "../lib/fx-server";

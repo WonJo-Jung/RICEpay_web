@@ -1,4 +1,4 @@
-import { BASE_SEPOLIA } from "@ricepay/shared";
+import { chains } from "../../lib/viem";
 
 export function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) return false;
@@ -9,7 +9,7 @@ export function isAllowedOrigin(origin: string | undefined): boolean {
 
 export function isAllowedChainId(id: number | undefined): boolean {
   if (!id) return false;
-  const allow = (`${BASE_SEPOLIA.id}` || '84532')
+  const allow = (`${chains[id].id}`)
     .split(',').map(s => Number(s.trim()));
   return allow.includes(id);
 }

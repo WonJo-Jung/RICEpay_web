@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AddressBookEntry, Network } from '@ricepay/shared';
+import type { AddressBookEntry, Chain } from '@ricepay/shared';
 import { AddressBookStore } from '../lib/local-address-book';
 
-export function useAddressBook(params?: { query?: string; network?: Network; includeDeleted?: boolean }) {
+export function useAddressBook(params?: { query?: string; chain?: Chain; includeDeleted?: boolean }) {
   const [items, setItems] = useState<AddressBookEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
@@ -20,7 +20,7 @@ export function useAddressBook(params?: { query?: string; network?: Network; inc
     } finally {
       setLoading(false);
     }
-  }, [params?.query, params?.network, params?.includeDeleted]);
+  }, [params?.query, params?.chain, params?.includeDeleted]);
 
   useEffect(() => {
     void reload();
@@ -28,12 +28,12 @@ export function useAddressBook(params?: { query?: string; network?: Network; inc
 
   const api = useMemo(() => ({
     reload,
-    create: async (input: { name: string; network: Network; address: string; memo: string }) => {
+    create: async (input: { name: string; chain: Chain; address: string; memo: string }) => {
       const res = await AddressBookStore.create(input);
       await reload();
       return res;
     },
-    update: async (id: string, patch: Partial<Pick<AddressBookEntry, 'name'|'memo'|'network'|'address'>>) => {
+    update: async (id: string, patch: Partial<Pick<AddressBookEntry, 'name'|'memo'|'chain'|'address'>>) => {
       const res = await AddressBookStore.update(id, patch);
       await reload();
       return res;

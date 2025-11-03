@@ -1,7 +1,7 @@
 "use client";
 import type { TxRecord } from "@ricepay/shared";
 
-const EXPLORER_TX = process.env.NEXT_PUBLIC_BASE_SEPOLIA_EXPLORER!;
+const EXPLORER_TX = process.env.NEXT_PUBLIC_EXPLORER!;
 
 const styles: Record<string, React.CSSProperties> = {
   PENDING: { backgroundColor: "#fef9c3", color: "#854d0e" }, // 노랑

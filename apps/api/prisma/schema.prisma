@@ -11,7 +11,7 @@ datasource db {
 model Transaction {
   id             String   @id @default(cuid())
   chainId        Int
-  network        String
+  chain          String
   txHash         String   @unique
   from           String
   to             String
@@ -30,13 +30,14 @@ model Receipt {
   id              String   @id @default(cuid())
   transactionId   String   @unique
   chainId         Int
-  network         String   // "BASE" | "ETHEREUM" | ...
+  chain           String   // "Base" | "Ethereum" | ...
   txHash          String
   direction       String   // "SENT" | "RECEIVED"
   token           String   // "USDC"
   amount          Decimal
   // 스냅샷들 (확정 시점)
   fiatCurrency    String   // "USD"
+  quoteCurrency   String
   fiatRate        Decimal  // rate at confirmation
   fiatAmount      Decimal  // amount * rate
   gasPaid         Decimal? // native unit at confirmation

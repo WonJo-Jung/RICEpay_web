@@ -1,5 +1,5 @@
 import localforage from 'localforage';
-import type { AddressBookEntry, Network } from '@ricepay/shared';
+import type { AddressBookEntry, Chain } from '@ricepay/shared';
 
 localforage.config({ name: 'ricepay', storeName: 'address_book' });
 const KEY = `address_book:${process.env.NEXT_PUBLIC_GLOBAL_PREFIX!}`;
@@ -13,10 +13,10 @@ async function saveAll(list: AddressBookEntry[]) {
 }
 
 export const AddressBookStore = {
-  async list(params?: { query?: string; network?: Network; includeDeleted?: boolean }) {
+  async list(params?: { query?: string; chain?: Chain; includeDeleted?: boolean }) {
     let items = await loadAll();
     if (!params?.includeDeleted) items = items.filter(i => !i.deletedAt);
-    if (params?.network) items = items.filter(i => i.network === params.network);
+    if (params?.chain) items = items.filter(i => i.chain === params.chain);
     if (params?.query) {
       const q = params.query.toLowerCase();
       items = items.filter(i =>
@@ -33,12 +33,12 @@ export const AddressBookStore = {
     return items;
   },
 
-  async create(input: { name: string; network: Network; address: string; memo: string }) {
+  async create(input: { name: string; chain: Chain; address: string; memo: string }) {
     const list = await loadAll();
     const addrLc = input.address.toLowerCase();
 
     // 1) 활성 중복: 최신 입력값으로 "업데이트" 처리 (이름/메모 갱신)
-    const active = list.find(i => !i.deletedAt && i.network === input.network && i.address.toLowerCase() === addrLc);
+    const active = list.find(i => !i.deletedAt && i.chain === input.chain && i.address.toLowerCase() === addrLc);
     if (active) {
       active.name = input.name.length > 0 ? input.name : active.name;
 
@@ -53,7 +53,7 @@ export const AddressBookStore = {
     }
 
     // 2) 소프트 삭제 항목이 있으면 "복구"
-    const deleted = list.find(i => i.deletedAt && i.network === input.network && i.address.toLowerCase() === addrLc);
+    const deleted = list.find(i => i.deletedAt && i.chain === input.chain && i.address.toLowerCase() === addrLc);
     if (deleted) {
       deleted.deletedAt = undefined;
       deleted.name = input.name.length > 0 ? input.name : deleted.name;
@@ -72,7 +72,7 @@ export const AddressBookStore = {
     const entry: AddressBookEntry = {
       id: crypto.randomUUID?.() ?? (await import('uuid')).v4(),
       name: input.name,
-      network: input.network,
+      chain: input.chain,
       address: input.address,
       memo: input.memo.trim(),
       usageCount: 0,
@@ -84,19 +84,19 @@ export const AddressBookStore = {
     return entry;
   },
 
-  async update(id: string, patch: Partial<Pick<AddressBookEntry, 'name' | 'memo' | 'network' | 'address'>>) {
+  async update(id: string, patch: Partial<Pick<AddressBookEntry, 'name' | 'memo' | 'chain' | 'address'>>) {
     const list = await loadAll();
     const idx = list.findIndex(i => i.id === id && !i.deletedAt);
     if (idx < 0) throw new Error('Not found');
 
     const next: AddressBookEntry = { ...list[idx], ...patch, updatedAt: now() };
 
-    if ((patch.network || patch.address) && list.some(i =>
+    if ((patch.chain || patch.address) && list.some(i =>
       !i.deletedAt &&
       i.id !== next.id &&
-      i.network === next.network &&
+      i.chain === next.chain &&
       i.address.toLowerCase() === next.address.toLowerCase(),
-    )) throw new Error('Duplicate network/address');
+    )) throw new Error('Duplicate chain/address');
 
     list[idx] = next;
     await saveAll(list);

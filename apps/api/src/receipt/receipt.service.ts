@@ -6,12 +6,13 @@ import { randomUUID } from 'node:crypto';
 type CreateReceiptInput = {
   transactionId: string;
   chainId: number;
-  network: string;
+  chain: string;
   txHash: string;
   direction: 'SENT' | 'RECEIVED';
   token: string;
   amount: string;           // decimal string
   fiatCurrency: 'USD';
+  quoteCurrency: 'MXN';
   fiatRate: string;         // decimal string
   gasPaid?: string;
   gasFiatAmount?: string;
@@ -22,6 +23,7 @@ type CreateReceiptInput = {
   toAddress: string;
   submittedAt: Date;
   confirmedAt: Date;
+  shareToken?: string;
   snapshot?: Record<string, unknown>;
 };
 
@@ -98,7 +100,7 @@ export class ReceiptService {
 
     // 일반 발급: 레이스 세이프(비어있을 때만 세팅)
     const res = await prisma.receipt.updateMany({
-      where: { id: rec.id, shareToken: null },
+      where: { id: rec.id, shareToken: undefined },
       data: { shareToken: newToken },
     });
 
@@ -167,7 +169,7 @@ export class ReceiptService {
 
     const result = await prisma.receipt.updateMany({
       where,
-      data: { shareToken: null },
+      data: { shareToken: undefined },
     });
 
     if (result.count === 0) {

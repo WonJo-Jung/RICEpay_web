@@ -5,7 +5,7 @@ export type Receipt = {
   id: string;
   transactionId: string;
   chainId: number;
-  network: string;
+  chain: string;
   txHash: string;
   direction: 'SENT' | 'RECEIVED';
   token: string;

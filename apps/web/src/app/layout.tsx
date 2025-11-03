@@ -1,4 +1,4 @@
-import { WalletProvider } from "@ricepay/web-lib";
+import WalletProvider from "../lib/wallet";
 
 export default function RootLayout({ children }) {
   const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID;

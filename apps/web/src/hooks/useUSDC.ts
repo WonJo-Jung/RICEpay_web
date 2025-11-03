@@ -3,10 +3,10 @@
 import { Dispatch, SetStateAction, useCallback } from 'react'
 import { erc20Abi, assertAddress, toUserMessage, withRetry, PreflightResponse, TxRecord, ComplianceErrorBody, getComplianceMessage } from '@ricepay/shared'
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
-import { parseUnits, formatUnits, formatEther, parseAbiItem } from 'viem'
-import { BASE_SEPOLIA } from '@ricepay/shared'
+import { parseUnits, formatUnits, formatEther } from 'viem'
 import { txPost } from "../lib/tx"
 import { TransferResult } from '../lib/tx'
+import { alchemyChains } from '../lib/viem'
 
 // ✅ 공통 상수
 const USDC = process.env.NEXT_PUBLIC_USDC_ADDR as `0x${string}`
@@ -36,7 +36,7 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
 
   // ✅ 송금 (에러 처리 추가 버전)
   const transfer = useCallback(
-    async (to: string, amount: string): Promise<TransferResult> => {
+    async (to: `0x${string}`, amount: string, chainId: number): Promise<TransferResult> => {
       try {
         if (!walletClient) throw Object.assign(new Error("WALLET_NOT_CONNECTED"), {
           ux: "지갑과 연결되지 않았어요."
@@ -45,17 +45,9 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
         // 1) 주소 포맷 확인
         assertAddress(to)
 
-        // 2) 네트워크 확인
-        const currentChainId = await walletClient.getChainId?.()
-        if (currentChainId !== BASE_SEPOLIA.id) {
-          throw Object.assign(new Error("WRONG_NETWORK"), {
-            ux: "Base Sepolia 네트워크로 전환해 주세요.",
-          })
-        }
-
-        // 3) 지오펜싱, 제재리스트 검토
+        // 2) 지오펜싱, 제재리스트 검토
         const { status, data: pre } = await txPost<PreflightResponse>('/compliance/preflight', {
-          chain: BASE_SEPOLIA.name, to
+          chain: alchemyChains[chainId].name, to
         });
 
         // 차단: /tx 호출하지 않음. 표준 바디로 result에 실어 배너로 노출.
@@ -99,14 +91,14 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
           }
         }
 
-        // 4) 가스비 추정 & ETH 잔액 확인
+        // 3) 가스비 추정 & ETH 잔액 확인
         const amt = parseUnits(amount, DECIMALS)
         const gas = await withRetry(() => publicClient.estimateContractGas({
           account: walletClient.account!,
           address: USDC,
           abi: erc20Abi,
           functionName: "transfer",
-          args: [to as `0x${string}`, amt],
+          args: [to, amt],
         }))
         const gasPrice = await withRetry(() => publicClient.getGasPrice());
         const needWei = gas * gasPrice
@@ -119,61 +111,49 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
           })
         }
 
-        // 5) 트랜잭션 실행
+        // 4) 트랜잭션 실행
         const hash = await walletClient.writeContract({
-          chain: BASE_SEPOLIA,
+          chain: alchemyChains[chainId],
           abi: erc20Abi,
           address: USDC,
           functionName: "transfer",
-          args: [to as `0x${string}`, amt],
+          args: [to, amt],
           account: walletClient.account,
         })
 
         setTxState({ status: "pending", hash })
 
-        // 6) 1컨펌 기다리기
+        // 5) 1컨펌 기다리기
         const receipt = await withRetry(() => publicClient.waitForTransactionReceipt({
           hash,
           confirmations: 1,
         }))
 
-        // 7) 요약 데이터 만들기
-        const { gasUsed, effectiveGasPrice, blockNumber } = receipt
+        // 6) 요약 데이터 만들기
+        const { gasUsed, effectiveGasPrice, blockNumber, from } = receipt
         const feeWei =
           gasUsed * (effectiveGasPrice ?? (await publicClient.getGasPrice()))
         const feeEth = formatEther(feeWei)
-
-        // Transfer 이벤트 파싱
-        const TransferEvt = parseAbiItem(
-          "event Transfer(address indexed from, address indexed to, uint256 value)"
-        )
-        const logs = await withRetry(() => publicClient.getLogs({
-          address: USDC,
-          event: TransferEvt,
-          fromBlock: receipt.blockNumber,
-          toBlock: receipt.blockNumber,
-        }))
-        const { from, to: toTX, value } = logs[0].args
 
         const summary = {
           status: receipt.status === "success" ? "success" : "failed",
           hash,
           blockNumber: Number(blockNumber),
           feeEth,
-          transfer: { from, to: toTX, value: Number(value) },
+          transfer: { from, to, value: Number(amount) },
         }
 
         setTxState(summary)
 
-        // 트랜잭션 테이블에 기록(/tx). 서버 가드가 최종 판정(451/403/503,201).
+        // 7) 트랜잭션 테이블에 기록(/tx). 서버 가드가 최종 판정(451/403/503,201).
         const res = await txPost<TxRecord | ComplianceErrorBody>('/tx', {
           txHash: hash,
           from,
-          to: toTX as `0x${string}`,
+          to,
           token: USDC,
           amount,          // "12.34" 같은 10진 문자열
-          chainId: BASE_SEPOLIA.id,
-          chain: BASE_SEPOLIA.name,
+          chainId,
+          gasPaid: feeEth,
         });
 
         if (res.ok && (res.status === 200 || res.status === 201)) {

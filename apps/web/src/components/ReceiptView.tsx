@@ -1,13 +1,14 @@
 "use client";
 
-import { shortAddr } from "../lib/address";
 import { computeDirection } from "../lib/direction";
-import { formatDateTime } from "../lib/datetime";
+import { formatFullDateTime } from "../lib/datetime";
 import type { Receipt } from "../hooks/useReceipt";
 import ShareIssueRotateButton from "./ShareIssueRotateButton";
 import Link from "next/link";
+import { alchemyChains } from "../lib/viem";
+import { Decimal } from "decimal.js";
 
-const EXPLORER_TX = process.env.NEXT_PUBLIC_BASE_SEPOLIA_EXPLORER!;
+const EXPLORER_TX = process.env.NEXT_PUBLIC_EXPLORER!;
 
 export default function ReceiptView({
   receipt,
@@ -36,52 +37,44 @@ export default function ReceiptView({
       </header>
 
       <section className="grid grid-cols-2 gap-3 text-sm">
-        <div className="font-medium">자산/금액</div>
-        <div>
-          {receipt.token} {receipt.amount}
-        </div>
+        <div className="font-medium">자산</div>
+        <div>{receipt.token}</div>
 
-        <div className="font-medium">환산금액</div>
-        <div>
-          {receipt.fiatCurrency} {receipt.fiatAmount} (rate: {receipt.fiatRate})
-        </div>
+        <div className="font-medium">금액</div>
+        <div>{receipt.amount} USDC</div>
 
-        {receipt.gasFiatAmount && (
+        {receipt.gasPaid && (
           <>
             <div className="font-medium">가스비</div>
-            <div>
-              {receipt.gasFiatAmount} {receipt.fiatCurrency}
-            </div>
+            <div>{new Decimal(receipt.gasPaid).toFixed(30)} ETH</div>
           </>
         )}
 
-        {receipt.appFeeFiat && (
+        {receipt.appFee && (
           <>
             <div className="font-medium">앱 수수료</div>
-            <div>
-              {receipt.appFeeFiat} {receipt.fiatCurrency}
-            </div>
+            <div>{receipt.appFee} USDC</div>
           </>
         )}
 
         <div className="font-medium">보낸 주소</div>
-        <div>{shortAddr(receipt.fromAddress)}</div>
+        <div>{receipt.fromAddress}</div>
 
         <div className="font-medium">받는 주소</div>
-        <div>{shortAddr(receipt.toAddress)}</div>
+        <div>{receipt.toAddress}</div>
 
-        <div className="font-medium">네트워크</div>
+        <div className="font-medium">체인</div>
         <div>
-          {receipt.network} (chainId {receipt.chainId})
+          {alchemyChains[receipt.chainId].label} (chainId {receipt.chainId})
         </div>
 
         <div className="font-medium">제출/확정</div>
         <div>
-          {formatDateTime(receipt.submittedAt)} →{" "}
-          {formatDateTime(receipt.confirmedAt)}
+          {formatFullDateTime(receipt.submittedAt)} →{" "}
+          {formatFullDateTime(receipt.confirmedAt)}
         </div>
 
-        <div className="font-medium">Tx</div>
+        <div className="font-medium">트랜잭션</div>
         <div>
           <Link
             href={`${EXPLORER_TX}/${receipt.txHash}`}

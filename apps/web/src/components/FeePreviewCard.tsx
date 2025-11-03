@@ -25,8 +25,9 @@ export function FeePreviewCard({ data }: { data: FeePreviewResponse }) {
       <div>수취 금액: {intToUsdc(totals.receiverGets.token)} USDC</div>
 
       <div style={{ marginTop: 8, opacity: 0.7, fontSize: 12 }}>
-        정책: {riceFee.policy.pct * 100}% / ${riceFee.policy.minUsd.toFixed(2)}{" "}
-        최소 / ${riceFee.policy.maxUsd.toFixed(2)} 상한
+        정책: {(riceFee.policy.pct * 100).toFixed(2)}% / $
+        {riceFee.policy.minUsd.toFixed(2)} 최소 / $
+        {riceFee.policy.maxUsd.toFixed(2)} 상한
       </div>
     </div>
   );
