@@ -78,7 +78,7 @@ export class FeesService {
     if (hit) return hit; // ✅ 15s 캐시 히트 시 즉시 반환
 
     const chainId = Number(q.chainId);
-    const chain = chains[q.chainId];
+    const chain = chains[chainId];
     const client = createPublicClient({ chain, transport: http(chain.rpcUrls.default.http[0]) });
 
     const amountInt = BigInt(q.amount);

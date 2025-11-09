@@ -39,7 +39,7 @@ export default function ActivityList({
             </span>
             <span className="text-xs text-gray-500">
               {shortAddr(r.fromAddress)} → {shortAddr(r.toAddress)} ·{" "}
-              {formatDateTime(r.confirmedAt)}
+              {formatDateTime(r.submittedAt)}
             </span>
           </div>
           <a

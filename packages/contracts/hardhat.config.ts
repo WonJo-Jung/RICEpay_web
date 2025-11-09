@@ -3,9 +3,9 @@ import type { HardhatUserConfig } from "hardhat/config";
 import "dotenv/config";
 import hardhatEthers from "@nomicfoundation/hardhat-ethers";
 
-import { BASE_SEPOLIA } from "@ricepay/shared";
+import { BASE_SEPOLIA, BASE } from "@ricepay/shared";
 
-const { BASE_SEPOLIA_RPC_URL, PRIVATE_KEY } = process.env;
+const { DEPLOYER_PK, BASE_SEPOLIA_RPC_URL, BASE_RPC_URL } = process.env;
 
 const config: HardhatUserConfig = {
   plugins: [hardhatEthers],
@@ -29,8 +29,14 @@ const config: HardhatUserConfig = {
     baseSepolia: {
       type: "http",
       chainId: BASE_SEPOLIA.id,
-      url: BASE_SEPOLIA_RPC_URL || "",
-      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : []
+      url: BASE_SEPOLIA_RPC_URL!,
+      accounts: [DEPLOYER_PK!]
+    },
+    base: {
+      type: "http",
+      chainId: BASE.id,
+      url: BASE_RPC_URL!,
+      accounts: [DEPLOYER_PK!]
     }
   },
 };

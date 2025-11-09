@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Headers, Param, Post, Req, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Headers, Post, Req, UnauthorizedException } from '@nestjs/common';
 import { TxService } from '../tx/tx.service';
 import { verifyAlchemySignature } from '../common/verify-alchemy-signature';
 import { createPublicClient, http } from 'viem';

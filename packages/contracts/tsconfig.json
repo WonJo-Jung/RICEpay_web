@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
-    "types": ["node", "hardhat"] // ← 필수
+    "types": ["node", "hardhat", "@nomicfoundation/hardhat-ethers"] // ← 필수
   },
   "include": ["./scripts", "./contracts", "./hardhat.config.ts"]
 }

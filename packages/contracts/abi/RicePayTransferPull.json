@@ -1,0 +1,63 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      { "name": "_usdc", "type": "address" },
+      { "name": "_feeRecipient", "type": "address" }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "USDC",
+    "stateMutability": "view",
+    "outputs": [{ "name": "", "type": "address" }],
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "name": "FEE_RECIPIENT",
+    "stateMutability": "view",
+    "outputs": [{ "name": "", "type": "address" }],
+    "inputs": []
+  },
+  {
+    "type": "function",
+    "name": "transferWithFee",
+    "stateMutability": "nonpayable",
+    "outputs": [],
+    "inputs": [
+      { "name": "to", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "quote",
+    "stateMutability": "pure",
+    "outputs": [
+      { "name": "fee", "type": "uint256" },
+      { "name": "net", "type": "uint256" }
+    ],
+    "inputs": [{ "name": "amount", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "minSend",
+    "stateMutability": "pure",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "inputs": []
+  },
+  {
+    "type": "event",
+    "name": "TransferWithFee",
+    "inputs": [
+      { "name": "owner", "type": "address", "indexed": true },
+      { "name": "to", "type": "address", "indexed": true },
+      { "name": "amount", "type": "uint256", "indexed": false },
+      { "name": "net", "type": "uint256", "indexed": false },
+      { "name": "fee", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  }
+]

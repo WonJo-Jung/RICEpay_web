@@ -5,6 +5,9 @@ import { useUSDC } from "../hooks/useUSDC";
 import { useTxStatus } from "../hooks/useTxStatus";
 import TxStatusBadge from "../components/TxStatusBadge";
 import { ComplianceResult } from "../lib/tx";
+import { useDebounce } from "../hooks/useDebounce";
+
+const MIN_AMOUNT = Number(process.env.NEXT_PUBLIC_MIN_AMOUNT ?? 1);
 
 export default function SendUSDCForm() {
   const { address, isConnected, chainId } = useAccount();
@@ -26,6 +29,9 @@ export default function SendUSDCForm() {
   const [isSending, setIsSending] = useState(false);
   const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
   const [compliance, setCompliance] = useState<ComplianceResult>(null);
+
+  const amtInt = useMemo(() => Number(amt), [amt]);
+  const dAmountInt = useDebounce(amtInt, 400);
 
   const {
     record: txRecord,
@@ -138,7 +144,6 @@ export default function SendUSDCForm() {
       >
         Check USDC Balance
       </button>
-
       <div>
         <input
           value={to}
@@ -150,12 +155,17 @@ export default function SendUSDCForm() {
           onChange={(e) => setAmt(e.target.value)}
           placeholder="Amount (USDC)"
         />
-        <button onClick={onSend} disabled={!isConnected || isSending}>
+        <button
+          onClick={onSend}
+          disabled={!isConnected || isSending || dAmountInt < MIN_AMOUNT} //#change
+        >
           Send
         </button>
         {isSending && <span>전송 중...</span>}
       </div>
-
+      {dAmountInt < MIN_AMOUNT && (
+        <div>{`송금 최소 금액은 ${MIN_AMOUNT} USDC입니다`}</div> //#change
+      )}
       {txState && txState.status === "success" && (
         <>
           <div>
@@ -180,13 +190,11 @@ export default function SendUSDCForm() {
           )}
         </>
       )}
-
       {txState && txState.status === "failed" && (
         <div>
           <span>msg: {txState.errMsg}</span>
         </div>
       )}
-
       {complianceBanner}
     </div>
   );

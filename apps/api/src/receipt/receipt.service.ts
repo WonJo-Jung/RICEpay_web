@@ -267,7 +267,7 @@ export class ReceiptService {
 
     const rows = await prisma.receipt.findMany({
       where,
-      orderBy: { confirmedAt: 'desc' },
+      orderBy: { submittedAt: 'desc' },
       take: take + 1,
       cursor: params.cursor ? { id: params.cursor } : undefined,
       skip: params.cursor ? 1 : 0,

@@ -1,19 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { usdcToInt } from '../lib/fees';
 import { useFeePreview } from './useFeePreview';
 import { useAccount } from 'wagmi';
 import { isAddress } from 'viem';
-
-function useDebounce<T>(value: T, delay = 350) {
-  const [v, setV] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setV(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return v;
-}
+import { useDebounce } from './useDebounce';
 
 export function useSendPreview() {
   const [to, setTo] = useState<string>('받는 주소(0x...)');

@@ -7,6 +7,7 @@ import { parseUnits, formatUnits, formatEther } from 'viem'
 import { txPost } from "../lib/tx"
 import { TransferResult } from '../lib/tx'
 import { alchemyChains } from '../lib/viem'
+import { sendUsdcWithFeePull } from '../lib/sendUsdcWithFeePull'
 
 // ✅ 공통 상수
 const USDC = process.env.NEXT_PUBLIC_USDC_ADDR as `0x${string}`
@@ -91,43 +92,24 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
           }
         }
 
-        // 3) 가스비 추정 & ETH 잔액 확인
-        const amt = parseUnits(amount, DECIMALS)
-        const gas = await withRetry(() => publicClient.estimateContractGas({
-          account: walletClient.account!,
-          address: USDC,
-          abi: erc20Abi,
-          functionName: "transfer",
-          args: [to, amt],
-        }))
-        const gasPrice = await withRetry(() => publicClient.getGasPrice());
-        const needWei = gas * gasPrice
-        const ethBal = await publicClient.getBalance({
-          address: walletClient.account!.address,
-        })
-        if (ethBal < needWei) {
-          throw Object.assign(new Error("INSUFFICIENT_GAS"), {
-            ux: `가스비 부족: 약 ${formatEther(needWei)} ETH 필요`,
-          })
-        }
-
-        // 4) 트랜잭션 실행
-        const hash = await walletClient.writeContract({
-          chain: alchemyChains[chainId],
-          abi: erc20Abi,
-          address: USDC,
-          functionName: "transfer",
-          args: [to, amt],
-          account: walletClient.account,
-        })
-
-        setTxState({ status: "pending", hash })
-
-        // 5) 1컨펌 기다리기
-        const receipt = await withRetry(() => publicClient.waitForTransactionReceipt({
-          hash,
-          confirmations: 1,
-        }))
+        // 3) 가스비 추정 & ETH 잔액 확인 + 4) 트랜잭션 실행 + 5) 1컨펌 기다리기
+        const { hash, receipt } = await sendUsdcWithFeePull(
+          {
+            to,
+            amount6: parseUnits(amount, DECIMALS),
+            chainId,
+            setTxState,
+            // (옵션) nonce/deadlineSec 필요 시 지정
+          },
+          {
+            usdc: process.env.NEXT_PUBLIC_USDC_ADDR as `0x${string}`,
+            rpt: process.env.NEXT_PUBLIC_RPT_ADDR as `0x${string}`,
+          },
+          {
+            walletClient,
+            publicClient,
+          }
+        );
 
         // 6) 요약 데이터 만들기
         const { gasUsed, effectiveGasPrice, blockNumber, from } = receipt
@@ -174,7 +156,8 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
       } catch (err) {
         // 7) 에러 메시지 정규화
         const message = toUserMessage(err)
-        setTxState({ status: "failed", errMsg: message })
+        setTxState({ status: "failed", errMsg: message });
+        return { hash: undefined, compliance: null }
       }
     },
     [walletClient, publicClient]
