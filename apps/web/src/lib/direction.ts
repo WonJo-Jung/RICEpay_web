@@ -2,7 +2,7 @@ export type Direction = 'SENT' | 'RECEIVED';
 
 // 내 주소 컨텍스트가 없으면 SENT 기본(공유 링크 등)
 export function computeDirection(
-  viewerAddresses: string[] | null | undefined,
+  viewerAddresses: string[] | null,
   fromAddress: string,
   toAddress: string
 ): Direction {

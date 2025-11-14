@@ -13,6 +13,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ReceiptModule } from './receipt/receipt.module';
 import { AuthController } from './auth/auth.controller';
 import { ComplianceModule } from './compliance/compliance.module';
+import { DevicesModule } from './devices/devices.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { ComplianceModule } from './compliance/compliance.module';
     ScheduleModule.forRoot(),
     ReceiptModule,
     ComplianceModule,
+    DevicesModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }, // ✅ 전역 가드 활성화

@@ -129,3 +129,28 @@ model SyncState {
   updatedAt         DateTime @updatedAt @default(now())
   createdAt         DateTime @default(now())
 }
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String?  // 또는 walletAddress, 현재 구조에 맞춰 선택
+  wallet      String?  // non-custodial이면 주소 기준도 같이 저장해두면 좋음
+  type        String   // 'TRANSFER_COMPLETED' | 'PAYMENT_COMPLETED' 등
+  title       String
+  body        String
+  data        Json?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  readAt      DateTime?
+}
+
+model Device {
+  id          String   @id @default(cuid())
+  userId      String?                          // 로그인 계정 생기면 사용
+  wallet      String?                          // 지금 구조에서는 이게 핵심
+  pushToken   String   @unique                 // Expo push token
+  platform    String                           // 'ios' | 'android' | 'expo'
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([wallet])
+}

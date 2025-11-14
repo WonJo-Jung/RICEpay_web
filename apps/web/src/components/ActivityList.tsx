@@ -5,13 +5,18 @@ import { useActivity } from "../hooks/useActivity";
 import { computeDirection } from "../lib/direction";
 import { shortAddr } from "../lib/address";
 import { formatDateTime } from "../lib/datetime"; // 기존 datetime 유틸 사용 가정
+import { useChainId } from "wagmi";
 
 export default function ActivityList({
   myAddresses,
 }: {
   myAddresses?: string[];
 }) {
-  const { items, loading, eof, loadMore } = useActivity({ pageSize: 20 });
+  const chainId = useChainId();
+  const { items, loading, eof, loadMore } = useActivity({
+    chainId,
+    pageSize: 20,
+  });
 
   const rows = useMemo(() => {
     return items.map((it) => {

@@ -29,11 +29,6 @@ export default function ReceiptView({
         <h1 className="text-lg font-semibold">
           {dir === "SENT" ? "송금 영수증" : "수취 영수증"}
         </h1>
-        <span
-          className={`rounded-md px-2 py-1 text-xs ${dir === "SENT" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}
-        >
-          {dir}
-        </span>
       </header>
 
       <section className="grid grid-cols-2 gap-3 text-sm">

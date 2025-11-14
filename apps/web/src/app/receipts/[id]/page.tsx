@@ -8,7 +8,7 @@ import { useAccount } from "wagmi";
 export default function ReceiptDetailPage() {
   const params = useParams<{ id: string }>();
   const { data, loading, error } = useReceiptById(params?.id);
-  const { address } = useAccount?.() ?? { address: undefined };
+  const { address } = useAccount();
 
   if (loading)
     return <div className="p-4 text-sm text-gray-500">불러오는 중…</div>;

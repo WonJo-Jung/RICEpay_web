@@ -3,10 +3,19 @@ import { TxService } from '../tx/tx.service';
 import { verifyAlchemySignature } from '../common/verify-alchemy-signature';
 import { createPublicClient, http } from 'viem';
 import { chains } from '../lib/viem';
+import { NotificationsService } from '../notifications/notifications.service';
+import { handleTxConfirmed } from '../tx/status/tx.handler';
+import { prisma } from '../lib/db';
+
+const RPT_ADDR = process.env.RPT_ADDR!.toLowerCase();
+const TREASURY_ADDR = process.env.TREASURY_ADDR!.toLowerCase();
 
 @Controller('/webhooks/alchemy')
 export class AlchemyWebhookController {
-  constructor(private tx: TxService) {}
+  constructor(
+    private tx: TxService,
+    private notifications: NotificationsService,
+  ) {}
 
   @Post()
   async handle(
@@ -48,8 +57,64 @@ export class AlchemyWebhookController {
       }
     }
 
-    // 4) 여러 해시에 대해 idempotent 업데이트
+    const acts = (payload.event.activity ?? []) as any[];
+
     for (const h of hashes) {
+      // 1) 이 hash에 해당하는 activity만 모으기
+      const actsForHash = acts.filter((a) => {
+        const ah = (a.hash ?? a.log.transactionHash ?? '').toLowerCase();
+        return ah === h;
+      });
+
+      const fresh = await prisma.transaction.findUnique({
+        where: { txHash: h },
+      });
+
+      if (fresh && actsForHash.length > 0 && status === 'CONFIRMED') {
+        const { id, txHash } = fresh;
+
+        // 2) user -> RPT leg (전체 전송 금액)
+        const incoming = actsForHash.find(
+          (a) =>
+            a.toAddress?.toLowerCase() === RPT_ADDR &&
+            a.fromAddress?.toLowerCase() !== RPT_ADDR, // 자기 자신 제외
+        );
+
+        // 3) RPT -> 실제 수신자 leg (treasury 아닌 쪽)
+        const outgoingToUser = actsForHash.find(
+          (a) =>
+            a.fromAddress?.toLowerCase() === RPT_ADDR &&
+            a.toAddress?.toLowerCase() !== TREASURY_ADDR,
+        );
+
+        // 4) (선택) RPT -> treasury leg
+        const feeLeg = actsForHash.find(
+          (a) =>
+            a.fromAddress?.toLowerCase() === RPT_ADDR &&
+            a.toAddress?.toLowerCase() === TREASURY_ADDR,
+        );
+
+        // user -> RPT + RPT -> user 둘 다 있어야 우리가 원하는 Tx로 판단
+        if (incoming && outgoingToUser) {
+          const { fromAddress: from, value: amount, asset } = incoming;
+          const { toAddress: to } = outgoingToUser;
+          const { value: fee} = feeLeg;
+
+          await handleTxConfirmed(
+            {
+              from,
+              amount,     // 여기서는 "보낸 전체 금액" (0.002) 유지
+              asset,      // 'USDC'
+              id,
+              to,
+              txHash,
+              fee,       // 수수료
+            },
+            this.notifications,
+          );
+        }
+      }
+
       await this.tx.applyWebhookUpdate({
         chainId: chain.id,
         eventId: eventId ?? `evt-${h}-${Date.now()}`,
