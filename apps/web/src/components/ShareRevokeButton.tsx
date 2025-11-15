@@ -57,7 +57,7 @@ export default function ShareRevokeButton({
       .join("\n");
 
     const signature = await wallet.signMessage({ account: address, message });
-    return { address: address.toLowerCase(), signature, exp, nonce };
+    return { address: address.toLowerCase(), signature, exp, nonce, origin };
   }
 
   async function revoke() {
@@ -65,10 +65,8 @@ export default function ShareRevokeButton({
     setErr(null);
     try {
       const path = `/${PREFIX}/receipts/${id}/share/revoke`;
-      const { address, signature, exp, nonce } = await signForRevokeWithWagmi(
-        path,
-        currentToken ?? undefined
-      );
+      const { address, signature, exp, nonce, origin } =
+        await signForRevokeWithWagmi(path, currentToken ?? undefined);
 
       const res = await fetch(
         `${API_BASE}/${PREFIX}/receipts/${id}/share/revoke`,

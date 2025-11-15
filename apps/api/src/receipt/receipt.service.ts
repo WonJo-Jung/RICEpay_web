@@ -100,7 +100,7 @@ export class ReceiptService {
 
     // 일반 발급: 레이스 세이프(비어있을 때만 세팅)
     const res = await prisma.receipt.updateMany({
-      where: { id: rec.id, shareToken: undefined },
+      where: { id: rec.id, shareToken: null },
       data: { shareToken: newToken },
     });
 
@@ -169,7 +169,7 @@ export class ReceiptService {
 
     const result = await prisma.receipt.updateMany({
       where,
-      data: { shareToken: undefined },
+      data: { shareToken: null },
     });
 
     if (result.count === 0) {

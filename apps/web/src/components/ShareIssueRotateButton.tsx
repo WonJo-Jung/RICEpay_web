@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import ShareRevokeButton from "./ShareRevokeButton";
 import { getNonce } from "../lib/address";
+import ShareQr from "./ShareQr";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
 const PREFIX = process.env.NEXT_PUBLIC_GLOBAL_PREFIX!;
@@ -70,7 +71,7 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
     ].join("\n");
 
     const signature = await wallet.signMessage({ account: address, message });
-    return { address: address.toLowerCase(), signature, exp, nonce };
+    return { address: address.toLowerCase(), signature, exp, nonce, origin };
   }
 
   async function requestToken(force = false) {
@@ -78,7 +79,7 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
     setErr(null);
     try {
       const path = `/${PREFIX}/receipts/${id}/share`;
-      const { address, signature, exp, nonce } =
+      const { address, signature, exp, nonce, origin } =
         await signForShareWithWagmi(path);
 
       const url = new URL(`${API_BASE}/${PREFIX}/receipts/${id}/share`);
@@ -122,6 +123,29 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
     }
   }
 
+  async function share() {
+    if (!shareUrl) return;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          text: `RicePay 공유 영수증 링크입니다\n${shareUrl}`,
+        });
+      } catch (err) {
+        // 사용자가 share sheet 닫거나 취소해도 에러로 잡히므로 조용히 무시
+        console.warn("공유 취소 또는 실패:", err);
+      }
+    } else {
+      // Web Share API 미지원 브라우저에 대한 fallback
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert("브라우저에서 공유 기능이 지원되지 않아 링크를 복사했습니다.");
+      } catch {
+        alert("브라우저 공유 기능이 지원되지 않습니다.");
+      }
+    }
+  }
+
   return (
     <div className="mt-3 text-sm space-y-2">
       <div className="flex gap-2">
@@ -147,30 +171,40 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
       {err && <div className="text-red-600">에러: {err}</div>}
 
       {shareUrl && (
-        <div className="flex items-center gap-3">
-          <span className="truncate max-w-[320px]">
-            공유 URL:{" "}
-            <a
+        <>
+          <div className="flex items-center gap-3">
+            <span className="truncate max-w-[320px]">
+              공유 링크:{" "}
+              <a
+                className="rounded px-2 py-1 border text-xs"
+                href={shareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                열기
+              </a>
+            </span>
+            <button onClick={copy} className="rounded px-2 py-1 border text-xs">
+              공유 링크 복사
+            </button>
+            <button
+              onClick={share}
               className="rounded px-2 py-1 border text-xs"
-              href={shareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
             >
-              새 탭에서 열기
-            </a>
-          </span>
-          <button onClick={copy} className="rounded px-2 py-1 border text-xs">
-            복사
-          </button>
-          <ShareRevokeButton
-            id={id}
-            currentToken={token}
-            onRevoked={() => {
-              // 회수되면 로컬 상태 초기화
-              setToken(null);
-            }}
-          />
-        </div>
+              공유 링크 공유
+            </button>
+            <ShareRevokeButton
+              id={id}
+              currentToken={token}
+              onRevoked={() => {
+                // 회수되면 로컬 상태 초기화
+                setToken(null);
+              }}
+            />
+          </div>
+
+          <ShareQr url={shareUrl} />
+        </>
       )}
     </div>
   );
