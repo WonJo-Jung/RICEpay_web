@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { Currency, RateProvider, RateQuote } from '../types';
+import { RateProvider, RateQuote } from '../types';
 
 @Injectable()
 export class OxrProvider implements RateProvider {
   constructor(private http: HttpService, private cfg: ConfigService) {}
-  async getRate(base: Currency, quote: Currency): Promise<RateQuote> {
+  async getRate(base: 'USD', quote: string): Promise<RateQuote> {
     const appId = this.cfg.get<string>('OXR_APP_ID');
     if (!appId) throw new Error('OXR_APP_ID_MISSING');
     const url = `https://openexchangerates.org/api/latest.json?app_id=${appId}&base=${base}&symbols=${quote}`;

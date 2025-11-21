@@ -21,25 +21,26 @@ export class TxService {
   async upsertPending(dto: {
     txHash: string; from: string; to: string;
     token?: string; amount?: string; chainId: number;
-    gasPaid: string;
+    gasPaid: string; quote: string;
   }): Promise<TxRecord> {
+    const { from, to, token, amount, chainId, gasPaid, quote } = dto;
     const txHash = norm(dto.txHash);
     const rec = await prisma.transaction.upsert({
       where: { txHash },
       update: {
-        from: dto.from,
-        to: dto.to,
-        token: dto.token ?? null,
-        amount: dto.amount ?? null,
+        from: from,
+        to: to,
+        token: token ?? null,
+        amount: amount ?? null,
       },
       create: {
         txHash,
-        from: dto.from,
-        to: dto.to,
-        token: dto.token ?? null,
-        amount: dto.amount ?? null,
-        chainId: dto.chainId,
-        chain: chains[dto.chainId].name,
+        from: from,
+        to: to,
+        token: token ?? null,
+        amount: amount ?? null,
+        chainId: chainId,
+        chain: chains[chainId].name,
         status: 'PENDING',
       },
     });
@@ -59,9 +60,9 @@ export class TxService {
 
       if (!already && essentialsReady) {
         try {
-          const rateUsd = await this.fx.get('USD', 'MXN');
+          const rateUsd = await this.fx.get('USD', quote);
           const policyVersion = this.fees.currentPolicyVersion();
-          const feeUsd = await this.fees.fee(BigInt(Math.round(Number(dto.amount) * 1e6)));
+          const feeUsd = await this.fees.fee(BigInt(Math.round(Number(amount) * 1e6)));
 
           await this.receipts.createSnapshot({
             transactionId: tx.id,
@@ -72,10 +73,10 @@ export class TxService {
             token: tx.token!,
             amount: String(tx.amount),
             fiatCurrency: 'USD',
-            quoteCurrency: 'MXN',
+            quoteCurrency: quote,
             fiatRate: String(rateUsd.rate),
-            gasPaid: dto.gasPaid,
-            gasFiatAmount: String(Number(dto.gasPaid) * Number(process.env.FIXED_ETH_USD ?? 2580) * rateUsd.rate),
+            gasPaid: gasPaid,
+            gasFiatAmount: String(Number(gasPaid) * Number(process.env.FIXED_ETH_USD ?? 2580) * rateUsd.rate),
             appFee: String(feeUsd),
             appFeeFiat: String(feeUsd * rateUsd.rate),
             policyVersion,
@@ -186,7 +187,6 @@ export class TxService {
       // ❗️필수값이 준비되지 않았다면 '지금은' 만들지 않음 (나중에 upsertPending/백필에서 생성)
       if (!already && essentialsReady) {
         try {
-          const rateUsd = await this.fx.get("USD", "MXN");
           const policyVersion = this.fees.currentPolicyVersion();
 
           await this.receipts.createSnapshot({
@@ -201,11 +201,11 @@ export class TxService {
             amount: String(tx.amount),
             fiatCurrency: 'USD',
             quoteCurrency: 'MXN',
-            fiatRate: String(rateUsd.rate),
+            fiatRate: undefined,
             gasPaid: updated.gasPaid ? String(updated.gasPaid) : undefined,
-            gasFiatAmount: updated.gasPaid ? String(Number(updated.gasPaid) * Number(process.env.FIXED_ETH_USD ?? 2580) * rateUsd.rate) : undefined,
+            gasFiatAmount: undefined,
             appFee: updated.appFee ? String(updated.appFee) : undefined,
-            appFeeFiat: updated.appFee ? String(Number(updated.appFee) * rateUsd.rate) : undefined,
+            appFeeFiat: undefined,
             policyVersion,
             fromAddress: tx.from,
             toAddress: tx.to,

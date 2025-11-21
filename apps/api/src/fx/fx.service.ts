@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { ConfigService } from '@nestjs/config';
-import { Currency, RateProvider, RateQuote } from './types';
+import { RateProvider, RateQuote } from './types';
 import { FrankfurterProvider } from './providers/frankfurter.provider';
 import { OxrProvider } from './providers/oxr.provider';
 
@@ -17,7 +17,7 @@ export class FxService {
     private frank: FrankfurterProvider,
   ) {}
 
-  private key(b: Currency, q: Currency) { return `fx:${b}:${q}`; }
+  private key(b: 'USD', q: string) { return `fx:${b}:${q}`; }
 
   private selectProviders(): RateProvider[] {
     const p = (this.cfg.get('FX_PRIMARY')).toUpperCase();
@@ -30,7 +30,7 @@ export class FxService {
     return list;
   }
 
-  async get(base: Currency, quote: Currency): Promise<RateQuote> {
+  async get(base: 'USD', quote: string): Promise<RateQuote> {
     const key = this.key(base, quote);
     const hit = await this.cache.get<RateQuote>(key);
     if (hit) return hit;

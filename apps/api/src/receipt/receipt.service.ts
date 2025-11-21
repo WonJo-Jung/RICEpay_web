@@ -12,7 +12,7 @@ type CreateReceiptInput = {
   token: string;
   amount: string;           // decimal string
   fiatCurrency: 'USD';
-  quoteCurrency: 'MXN';
+  quoteCurrency: string;
   fiatRate: string;         // decimal string
   gasPaid?: string;
   gasFiatAmount?: string;
