@@ -27,7 +27,11 @@ export default function ReceiptView({
     <div className="mx-auto max-w-xl space-y-4 rounded-xl border p-4">
       <header className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">
-          {dir === "SENT" ? "송금 영수증" : "수취 영수증"}
+          {dir === "SENT"
+            ? "송금 영수증"
+            : dir === "RECEIVED"
+              ? "수취 영수증"
+              : "공유 영수증"}
         </h1>
       </header>
 

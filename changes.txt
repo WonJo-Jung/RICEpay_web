@@ -1,0 +1,184 @@
+diff --git a/apps/api/src/compliance/utils/geo.ts b/apps/api/src/compliance/utils/geo.ts
+index c9bffc6..3e47439 100644
+--- a/apps/api/src/compliance/utils/geo.ts
++++ b/apps/api/src/compliance/utils/geo.ts
+@@ -145,7 +145,7 @@ const cacheGeoThreat = new Map<string, Cache>();
+  * - country: ISO-3166-1 alpha-2 (예: US, KR)
+  * - region: ISO-3166-2 (예: US-CA, KR-11) 또는 name 문자열
+  */
+-async function lookupIpregistry(ip: string): Promise<IpInfo | null> {
++export async function lookupIpregistry(ip: string): Promise<IpInfo | null> {
+   const key = process.env.IPREGISTRY_API_KEY;
+   if (!key) {
+     console.warn('[lookupIpregistry] IPREGISTRY_API_KEY missing');
+@@ -157,7 +157,7 @@ async function lookupIpregistry(ip: string): Promise<IpInfo | null> {
+ 
+     const client: IpregistryClient = new IpregistryClient(key)
+     const res: ApiResponse<IpInfo> =
+-      await client.lookupIp(process.env.NODE_ENV === "production" ? ip : "180.64.206.16", IpregistryOptions.hostname(true));
++      await client.lookupIp("180.64.206.16", IpregistryOptions.hostname(true));
+     clearTimeout(to);
+ 
+     if (!res || !res.data) {
+diff --git a/apps/api/src/fx/fx.controller.ts b/apps/api/src/fx/fx.controller.ts
+index 85fc8dd..f861610 100644
+--- a/apps/api/src/fx/fx.controller.ts
++++ b/apps/api/src/fx/fx.controller.ts
+@@ -1,6 +1,7 @@
+ // 4. /v1/fx 엔드포인트를 담당하는 컨트롤러. 쿼리를 받아서 서비스 호출
+-import { BadRequestException, Controller, Get, Header, Query } from '@nestjs/common';
++import { BadRequestException, Controller, Get, Header, Query, Req } from '@nestjs/common';
+ import { FxService } from './fx.service';
++import { lookupIpregistry } from '../compliance/utils/geo';
+ 
+ @Controller('fx')
+ export class FxController {
+@@ -11,12 +12,18 @@ export class FxController {
+ 
+   @Get()
+   @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
+-  async get(@Query() q: { base: 'USD'; quote: string; }) {
+-    const pair = `${q.base}:${q.quote}`.toUpperCase();
++  async get(@Query() q: { base: 'USD'; }, @Req() req: any) {
++    const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '').trim();
++    if (!ip) {
++      throw new BadRequestException({ error: 'FX_IP_INVALID', ip });
++    }
++
++    const lookup = await lookupIpregistry(ip);
++    const pair = `${q.base}:${lookup.currency.code}`.toUpperCase();
+     if (!this.allowedPairs.includes(pair)) {
+       throw new BadRequestException({ error: 'FX_PAIR_NOT_ALLOWED', pair });
+     }
+-    const r = await this.fx.get(q.base, q.quote);
++    const r = await this.fx.get(q.base, lookup.currency.code);
+     return {
+       base: r.base, quote: r.quote, rate: r.rate,
+       asOf: r.asOf.toISOString(), source: r.source, stale: !!r.stale,
+diff --git a/apps/api/src/tx/dto/create-tx.dto.ts b/apps/api/src/tx/dto/create-tx.dto.ts
+index 831029f..9272e9c 100644
+--- a/apps/api/src/tx/dto/create-tx.dto.ts
++++ b/apps/api/src/tx/dto/create-tx.dto.ts
+@@ -6,7 +6,6 @@ export class CreateTxDto {
+   @IsEthereumAddress() to!: `0x${string}`;
+   @IsInt() chainId!: number;
+   @IsString() gasPaid!: string;
+-  @IsString() quote!: string;
+   @IsOptional() @IsString() token?: `0x${string}`;
+   @IsOptional() @IsString() amount?: string;
+ }
+\ No newline at end of file
+diff --git a/apps/api/src/tx/tx.controller.ts b/apps/api/src/tx/tx.controller.ts
+index 9efb430..61f5e58 100644
+--- a/apps/api/src/tx/tx.controller.ts
++++ b/apps/api/src/tx/tx.controller.ts
+@@ -1,4 +1,4 @@
+-import { Body, Controller, Get, Post, Query, Sse, UseGuards, UseInterceptors } from '@nestjs/common';
++import { BadRequestException, Body, Controller, Get, Post, Query, Req, Sse, UseGuards, UseInterceptors } from '@nestjs/common';
+ import { Observable, map } from 'rxjs';
+ import { CreateTxDto } from './dto/create-tx.dto';
+ import { TxService } from './tx.service';
+@@ -7,6 +7,7 @@ import type { TxRecord } from '@ricepay/shared';
+ import { SkipThrottle, Throttle } from '@nestjs/throttler';
+ import { CacheInterceptor } from '@nestjs/cache-manager';
+ import { ComplianceGuard } from '../compliance/compliance.guard';
++import { lookupIpregistry } from '../compliance/utils/geo';
+ 
+ @Controller('/tx')
+ export class TxController {
+@@ -15,8 +16,14 @@ export class TxController {
+   @Throttle({ tx: { ttl: 1, limit: 3 } }) // 초당 3번
+   @UseGuards(ComplianceGuard)
+   @Post()
+-  create(@Body() dto: CreateTxDto): Promise<TxRecord> {
+-    return this.svc.upsertPending(dto);
++  async create(@Body() dto: CreateTxDto, @Req() req: any): Promise<TxRecord> {
++    const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '').trim();
++    if (!ip) {
++      throw new BadRequestException({ error: 'TX_IP_INVALID', ip });
++    }
++
++    const lookup = await lookupIpregistry(ip);
++    return this.svc.upsertPending(dto, lookup);
+   }
+ 
+   @UseInterceptors(CacheInterceptor)
+diff --git a/apps/api/src/tx/tx.service.ts b/apps/api/src/tx/tx.service.ts
+index 7b3e574..8728dbe 100644
+--- a/apps/api/src/tx/tx.service.ts
++++ b/apps/api/src/tx/tx.service.ts
+@@ -6,6 +6,7 @@ import { FxService } from '../fx/fx.service';
+ import { FeesService } from '../fees/fees.service';
+ import { prisma } from '../lib/db';
+ import { chains } from '../lib/viem';
++import { IpInfo } from '@ipregistry/client';
+ 
+ const norm = (h: string) => h.toLowerCase() as `0x${string}`;
+ 
+@@ -21,9 +22,9 @@ export class TxService {
+   async upsertPending(dto: {
+     txHash: string; from: string; to: string;
+     token?: string; amount?: string; chainId: number;
+-    gasPaid: string; quote: string;
+-  }): Promise<TxRecord> {
+-    const { from, to, token, amount, chainId, gasPaid, quote } = dto;
++    gasPaid: string;
++  }, { currency }: IpInfo): Promise<TxRecord> {
++    const { from, to, token, amount, chainId, gasPaid } = dto;
+     const txHash = norm(dto.txHash);
+     const rec = await prisma.transaction.upsert({
+       where: { txHash },
+@@ -60,7 +61,7 @@ export class TxService {
+ 
+       if (!already && essentialsReady) {
+         try {
+-          const rateUsd = await this.fx.get('USD', quote);
++          const rateUsd = await this.fx.get('USD', currency.code);
+           const policyVersion = this.fees.currentPolicyVersion();
+           const feeUsd = await this.fees.fee(BigInt(Math.round(Number(amount) * 1e6)));
+ 
+@@ -73,7 +74,7 @@ export class TxService {
+             token: tx.token!,
+             amount: String(tx.amount),
+             fiatCurrency: 'USD',
+-            quoteCurrency: quote,
++            quoteCurrency: currency.code,
+             fiatRate: String(rateUsd.rate),
+             gasPaid: gasPaid,
+             gasFiatAmount: String(Number(gasPaid) * Number(process.env.FIXED_ETH_USD ?? 2580) * rateUsd.rate),
+diff --git a/apps/web/src/components/ReceiptView.tsx b/apps/web/src/components/ReceiptView.tsx
+index c8ad986..1ae9f19 100644
+--- a/apps/web/src/components/ReceiptView.tsx
++++ b/apps/web/src/components/ReceiptView.tsx
+@@ -27,7 +27,11 @@ export default function ReceiptView({
+     <div className="mx-auto max-w-xl space-y-4 rounded-xl border p-4">
+       <header className="flex items-center justify-between">
+         <h1 className="text-lg font-semibold">
+-          {dir === "SENT" ? "송금 영수증" : "수취 영수증"}
++          {dir === "SENT"
++            ? "송금 영수증"
++            : dir === "RECEIVED"
++              ? "수취 영수증"
++              : "공유 영수증"}
+         </h1>
+       </header>
+ 
+diff --git a/apps/web/src/lib/direction.ts b/apps/web/src/lib/direction.ts
+index 44b5e7d..d26ab46 100644
+--- a/apps/web/src/lib/direction.ts
++++ b/apps/web/src/lib/direction.ts
+@@ -1,4 +1,4 @@
+-export type Direction = 'SENT' | 'RECEIVED';
++export type Direction = 'SENT' | 'RECEIVED' | 'EXTERNAL';
+ 
+ // 내 주소 컨텍스트가 없으면 SENT 기본(공유 링크 등)
+ export function computeDirection(
+@@ -7,7 +7,7 @@ export function computeDirection(
+   toAddress: string
+ ): Direction {
+   const toL = (s: string) => s?.toLowerCase?.() ?? '';
+-  if (!viewerAddresses || viewerAddresses.length === 0) return 'SENT';
++  if (!viewerAddresses || viewerAddresses.length === 0) return 'EXTERNAL';
+   const set = new Set(viewerAddresses.map(toL));
+   const from = toL(fromAddress);
+   const to = toL(toAddress);

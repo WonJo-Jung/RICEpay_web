@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Sse, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, Req, Sse, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 import { CreateTxDto } from './dto/create-tx.dto';
 import { TxService } from './tx.service';
@@ -7,6 +7,7 @@ import type { TxRecord } from '@ricepay/shared';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { ComplianceGuard } from '../compliance/compliance.guard';
+import { lookupIpregistry } from '../compliance/utils/geo';
 
 @Controller('/tx')
 export class TxController {
@@ -15,8 +16,14 @@ export class TxController {
   @Throttle({ tx: { ttl: 1, limit: 3 } }) // 초당 3번
   @UseGuards(ComplianceGuard)
   @Post()
-  create(@Body() dto: CreateTxDto): Promise<TxRecord> {
-    return this.svc.upsertPending(dto);
+  async create(@Body() dto: CreateTxDto, @Req() req: any): Promise<TxRecord> {
+    const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '').trim();
+    if (!ip) {
+      throw new BadRequestException({ error: 'TX_IP_INVALID', ip });
+    }
+
+    const lookup = await lookupIpregistry(ip);
+    return this.svc.upsertPending(dto, lookup);
   }
 
   @UseInterceptors(CacheInterceptor)

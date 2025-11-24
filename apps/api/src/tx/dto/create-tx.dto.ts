@@ -6,7 +6,6 @@ export class CreateTxDto {
   @IsEthereumAddress() to!: `0x${string}`;
   @IsInt() chainId!: number;
   @IsString() gasPaid!: string;
-  @IsString() quote!: string;
   @IsOptional() @IsString() token?: `0x${string}`;
   @IsOptional() @IsString() amount?: string;
 }

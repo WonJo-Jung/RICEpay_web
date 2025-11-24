@@ -145,7 +145,7 @@ const cacheGeoThreat = new Map<string, Cache>();
  * - country: ISO-3166-1 alpha-2 (예: US, KR)
  * - region: ISO-3166-2 (예: US-CA, KR-11) 또는 name 문자열
  */
-async function lookupIpregistry(ip: string): Promise<IpInfo | null> {
+export async function lookupIpregistry(ip: string): Promise<IpInfo | null> {
   const key = process.env.IPREGISTRY_API_KEY;
   if (!key) {
     console.warn('[lookupIpregistry] IPREGISTRY_API_KEY missing');
@@ -157,7 +157,7 @@ async function lookupIpregistry(ip: string): Promise<IpInfo | null> {
 
     const client: IpregistryClient = new IpregistryClient(key)
     const res: ApiResponse<IpInfo> =
-      await client.lookupIp(process.env.NODE_ENV === "production" ? ip : "180.64.206.16", IpregistryOptions.hostname(true));
+      await client.lookupIp("180.64.206.16", IpregistryOptions.hostname(true));
     clearTimeout(to);
 
     if (!res || !res.data) {

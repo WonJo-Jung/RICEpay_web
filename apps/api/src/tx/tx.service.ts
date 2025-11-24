@@ -6,6 +6,7 @@ import { FxService } from '../fx/fx.service';
 import { FeesService } from '../fees/fees.service';
 import { prisma } from '../lib/db';
 import { chains } from '../lib/viem';
+import { IpInfo } from '@ipregistry/client';
 
 const norm = (h: string) => h.toLowerCase() as `0x${string}`;
 
@@ -21,9 +22,9 @@ export class TxService {
   async upsertPending(dto: {
     txHash: string; from: string; to: string;
     token?: string; amount?: string; chainId: number;
-    gasPaid: string; quote: string;
-  }): Promise<TxRecord> {
-    const { from, to, token, amount, chainId, gasPaid, quote } = dto;
+    gasPaid: string;
+  }, { currency }: IpInfo): Promise<TxRecord> {
+    const { from, to, token, amount, chainId, gasPaid } = dto;
     const txHash = norm(dto.txHash);
     const rec = await prisma.transaction.upsert({
       where: { txHash },
@@ -60,7 +61,7 @@ export class TxService {
 
       if (!already && essentialsReady) {
         try {
-          const rateUsd = await this.fx.get('USD', quote);
+          const rateUsd = await this.fx.get('USD', currency.code);
           const policyVersion = this.fees.currentPolicyVersion();
           const feeUsd = await this.fees.fee(BigInt(Math.round(Number(amount) * 1e6)));
 
@@ -73,7 +74,7 @@ export class TxService {
             token: tx.token!,
             amount: String(tx.amount),
             fiatCurrency: 'USD',
-            quoteCurrency: quote,
+            quoteCurrency: currency.code,
             fiatRate: String(rateUsd.rate),
             gasPaid: gasPaid,
             gasFiatAmount: String(Number(gasPaid) * Number(process.env.FIXED_ETH_USD ?? 2580) * rateUsd.rate),
