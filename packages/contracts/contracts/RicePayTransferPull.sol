@@ -53,9 +53,9 @@ contract RicePayTransferPull is ReentrancyGuard {
         address owner = msg.sender; // 호출자가 곧 소유자 (offchain 검증 대체)
 
         // 1) 수수료 계산(클램프) — pull 이전에 컷하여 가스 낭비 방지
-        // (uint256 fee, uint256 net) = _calcFee(amount); #change
-        uint256 fee = 1000; #change
-        uint256 net = amount - 1000; #change
+        (uint256 fee, uint256 net) = _calcFee(amount); #change
+        // uint256 fee = 1000; #change
+        // uint256 net = amount - 1000; #change
         if (fee > amount) revert FeeTooHigh();
 
         // 2) owner -> this (총액) pull

@@ -13,7 +13,7 @@ type CreateReceiptInput = {
   amount: string;           // decimal string
   fiatCurrency: 'USD';
   quoteCurrency: string;
-  fiatRate: string;         // decimal string
+  fiatRate?: string;        // decimal string
   gasPaid?: string;
   gasFiatAmount?: string;
   appFee?: string;
@@ -49,7 +49,7 @@ export class ReceiptService {
       create: {
         ...input,
         // 간단 계산(정밀 필요하면 decimal lib 사용)
-        fiatAmount: (Number(input.amount) * Number(input.fiatRate)).toString(),
+        fiatAmount: input.fiatRate ? (Number(input.amount) * Number(input.fiatRate)).toString() : undefined,
         snapshot: (input.snapshot ?? {}) as Prisma.InputJsonValue,
       },
       update: {}, // 이미 있으면 갱신 안 함

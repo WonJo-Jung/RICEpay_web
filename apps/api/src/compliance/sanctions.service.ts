@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { normalize } from './utils/address';
 import { SanctionsProvider } from './providers/sanctions.provider';
 import { prisma } from '../lib/db';
@@ -10,7 +10,8 @@ export class SanctionsService {
   async isBlocked(chain: string, address: string) {
     const { chain: c, address: a, checksum } = normalize(chain, address);
 
-    // 1️⃣ 로컬 DB 조회 (즉시 차단)
+    // 제재리스트를 온프레미스로 전환시 주석 해제
+    /*// 1️⃣ 로컬 DB 조회 (즉시 차단)
     const local = await prisma.sanctionedAddress.findUnique({
       where: { chain_address: { chain: c, address: a } },
       select: { reason: true, source: true, version: true },
@@ -21,7 +22,7 @@ export class SanctionsService {
         reason: local.reason ?? local.source ?? 'local',
         version: local.version,
         checksum, // ✅ 반환값에 포함
-      };
+      };*/
 
     // 2️⃣ 외부 제재 API 조회 (실패는 여기서 정책 적용)
     try {

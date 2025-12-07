@@ -10,8 +10,8 @@ export async function handleTxConfirmed(
   await notificationsService.createAndSend({
     wallet: from,
     type: "TRANSFER_COMPLETED",
-    title: "송금 완료",
-    body: `${amount} ${asset} 전송이 완료되었습니다.`,
+    title: "Sending complete",
+    body: `${amount} ${asset} has been sent`,
     data: {
       txId: id,
       txHash: txHash,
@@ -31,8 +31,8 @@ export async function handleTxConfirmed(
     await notificationsService.createAndSend({
       wallet: to,
       type: "TRANSFER_RECEIVED",
-      title: "입금 완료",
-      body: `${amount} ${asset}가 입금되었습니다.`,
+      title: "Receiving complete",
+      body: `${amount} ${asset} has been received`,
       data: {
         txId: id,
         txHash: txHash,

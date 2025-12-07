@@ -38,8 +38,8 @@ model Receipt {
   // 스냅샷들 (확정 시점)
   fiatCurrency    String   // "USD"
   quoteCurrency   String
-  fiatRate        Decimal  // rate at confirmation
-  fiatAmount      Decimal  // amount * rate
+  fiatRate        Decimal? // rate at confirmation
+  fiatAmount      Decimal? // amount * rate
   gasPaid         Decimal? // native unit at confirmation
   gasFiatAmount   Decimal? // gas * nativeUSD
   appFee          Decimal? // token unit

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Receipt" ALTER COLUMN "fiatRate" DROP NOT NULL,
+ALTER COLUMN "fiatAmount" DROP NOT NULL;

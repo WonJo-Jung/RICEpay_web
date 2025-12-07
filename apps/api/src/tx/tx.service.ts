@@ -48,8 +48,16 @@ export class TxService {
     const tx = this.toTxRecord(rec);
     this.stream.push(tx);
 
-    // ✅ 추가: 이미 CONFIRMED 상태였고, 지금 메타가 채워졌다면 여기서 영수증을 멱등 생성
-    if (tx.status === 'CONFIRMED') {
+    // ✅ 영수증 생성 정책 설명
+    // -------------------------------------------------------------
+    // 예전에는 tx.status === 'CONFIRMED' 일 때만 영수증을 생성했지만,
+    // 사용자가 송금 완료 전(웹훅 오기 전)에 앱으로 돌아올 수 있기 때문에,
+    // CONFIRMED 여부와 관계없이 “실패 상태가 아닌 트랜잭션”에 대해 영수증을 생성한다.
+    //
+    // - 멱등성은 transactionId 기반으로 보장됨 ('already' 검사 + DB unique 제약)
+    // - 확정되지 않은(PENDING) 상태에서도 기본 정보가 준비되면 영수증을 생성하여
+    //   UI에서 즉시 표시할 수 있음
+    if (tx.status === 'CONFIRMED' || tx.status === 'PENDING') {
       const already = await prisma.receipt.findUnique({
         where: { transactionId: tx.id },
         select: { id: true },
