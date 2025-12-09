@@ -50,7 +50,7 @@ export class ReceiptService {
         ...input,
         // 간단 계산(정밀 필요하면 decimal lib 사용)
         fiatAmount: input.fiatRate ? (Number(input.amount) * Number(input.fiatRate)).toString() : undefined,
-        snapshot: (input.snapshot ?? {}) as Prisma.InputJsonValue,
+        snapshot: (input.snapshot ?? {}) as Prisma.JsonValue,
       },
       update: {}, // 이미 있으면 갱신 안 함
     });
