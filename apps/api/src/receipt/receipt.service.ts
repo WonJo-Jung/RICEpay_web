@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { prisma } from '../lib/db';
-import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import { InputJsonValue } from '@prisma/client/runtime/library';
 
 type CreateReceiptInput = {
   transactionId: string;
@@ -50,7 +50,7 @@ export class ReceiptService {
         ...input,
         // 간단 계산(정밀 필요하면 decimal lib 사용)
         fiatAmount: input.fiatRate ? (Number(input.amount) * Number(input.fiatRate)).toString() : undefined,
-        snapshot: (input.snapshot ?? {}) as Prisma.JsonValue,
+        snapshot: (input.snapshot ?? {}) as InputJsonValue,
       },
       update: {}, // 이미 있으면 갱신 안 함
     });
