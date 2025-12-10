@@ -16,6 +16,7 @@ import { ComplianceModule } from './compliance/compliance.module';
 import { DevicesModule } from './devices/devices.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { NotifyModule } from './alchemy/notify.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -53,6 +54,6 @@ import { NotifyModule } from './alchemy/notify.module';
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard }, // ✅ 전역 가드 활성화
   ],
-  controllers: [AlchemyWebhookController, AuthController]
+  controllers: [AlchemyWebhookController, AuthController, HealthController]
 })
 export class AppModule {}
