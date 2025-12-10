@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-ssm": "^3.948.0",
     "@ipregistry/client": "^6.0.0",
     "@maxmind/geoip2-node": "^6.1.0",
     "@nestjs/axios": "^4.0.1",

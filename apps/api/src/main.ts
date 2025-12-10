@@ -3,13 +3,34 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './module';
 import { ValidationPipe } from '@nestjs/common';
 import { json, urlencoded } from 'body-parser';
+import { loadSsmEnv } from './lib/ssm-env';
 
 const corsAllowed = (process.env.CORS_ALLOWED_ORIGINS ?? '')
   .split(',')
   .map(s => s.trim())
   .filter(Boolean);
 
+const isProd =
+  process.env.NODE_ENV === "production" &&
+  process.env.AWS_EXECUTION_ENV === "true"; // EC2/Lambda 같은 AWS 환경일 때만 true
+
 async function bootstrap() {
+  // 프로덕션(EC2)에서만 SSM 사용
+  if (isProd) {
+    try {
+      console.log('[SSM] Loading parameters from SSM...');
+      await loadSsmEnv();
+      console.log('[SSM] Loaded successfully');
+    } catch (err) {
+      console.error('[SSM] Failed to load parameters', err);
+      // 여기서 throw 하면 부팅 자체가 죽음 → 일단은 로깅만 하고 진행
+      // throw err;
+    }
+  } else {
+    // ✅ 로컬/테스트에선 그냥 통과
+    console.log("[SSM] Skipping SSM load (non-AWS env)");
+  }
+
   const app = await NestFactory.create(AppModule, { rawBody: true });
   app.setGlobalPrefix(process.env.GLOBAL_PREFIX!);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
