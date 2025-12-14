@@ -5,9 +5,7 @@ RUN corepack enable
 
 # 1) deps (workspace 설치 - dev 포함)
 FROM base AS deps
-COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
-COPY apps/api/package.json apps/api/package.json
-COPY packages ./packages
+COPY . .
 RUN pnpm install --frozen-lockfile
 
 # 2) build
