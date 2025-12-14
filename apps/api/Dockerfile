@@ -1,5 +1,6 @@
 # apps/api/Dockerfile
 FROM node:22-bookworm-slim AS base
+RUN apt-get update -y && apt-get install -y openssl
 WORKDIR /app
 RUN corepack enable
 
@@ -8,7 +9,7 @@ FROM base AS deps
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages ./packages
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # 2) build
 FROM base AS build
