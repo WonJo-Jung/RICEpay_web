@@ -1,0 +1,79 @@
+name: Deploy API (ECR -> EC2)
+
+on:
+  push:
+    branches: ["main"] # main 브랜치에 push될 때만 배포
+    paths:
+      - "apps/api/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - "turbo.json"
+      - ".github/workflows/deploy-api.yml"
+
+permissions:
+  id-token: write # OIDC 필수
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ricepay-api
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          docker build \
+            -f apps/api/Dockerfile \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            .
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+  # ✅ 선택(자동배포): SSM으로 EC2에서 /opt/ricepay/deploy.sh 실행
+  # 사용하려면:
+  # 1) GitHub Secrets에 EC2_INSTANCE_ID 추가 (값: i-056f66e12d8468d78)
+  # 2) ricepay-github-actions-role에 ssm:SendCommand 권한 추가
+  deploy-ec2:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: ${{ needs.build-and-push.result == 'success' && secrets.EC2_INSTANCE_ID != '' }}
+
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy ricepay-api from ECR" \
+            --parameters commands="sudo /opt/ricepay/deploy.sh" \
+            --timeout-seconds 600
