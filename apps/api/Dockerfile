@@ -10,7 +10,11 @@ COPY packages ./packages
 RUN pnpm install --frozen-lockfile
 
 FROM base AS build
+# ✅ 루트 node_modules
 COPY --from=deps /app/node_modules ./node_modules
+# ✅ 패키지(node_modules/.bin 포함)도 같이
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+
 COPY . .
 
 # prisma + build (api 기준)
