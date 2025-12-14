@@ -11,8 +11,8 @@ RUN pnpm -w install --frozen-lockfile --prod=false
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm -w prisma:generate --schema=apps/api/prisma/schema.prisma
-RUN pnpm -w build:prod
+RUN pnpm -w exec prisma generate --schema=apps/api/prisma/schema.prisma
+RUN pnpm -w --filter @ricepay/api build:prod
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
