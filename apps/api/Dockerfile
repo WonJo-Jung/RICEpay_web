@@ -1,34 +1,24 @@
 # apps/api/Dockerfile
-FROM node:22-bookworm-slim AS base
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+FROM node:22-bookworm-slim
+
+# 필수 런타임
+RUN apt-get update -y && apt-get install -y openssl
+
 WORKDIR /app
 RUN corepack enable
 
-# 1) deps (dev 포함 설치)
-FROM base AS deps
-COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
-COPY apps/api/package.json apps/api/package.json
-COPY packages ./packages
+# workspace 전체 복사
+COPY . .
+
+# 전체 의존성 설치 (dev 포함)
 RUN pnpm install --frozen-lockfile
 
-# 2) build
-FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY . .
+# prisma generate (schema 위치 명시)
 WORKDIR /app/apps/api
 RUN pnpm prisma:generate --schema=./prisma/schema.prisma
+
+# nest build
 RUN pnpm build:prod
-
-# 3) runtime (설치 X, 복사만)
-FROM node:22-bookworm-slim AS runner
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-ENV NODE_ENV=production
-
-COPY --from=build /app/apps/api/dist ./dist
-COPY --from=build /app/apps/api/package.json ./package.json
-COPY --from=build /app/node_modules ./node_modules
 
 EXPOSE 4000
 CMD ["node", "dist/main.js"]
