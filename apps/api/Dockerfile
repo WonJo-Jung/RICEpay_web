@@ -4,21 +4,17 @@ RUN apt-get update -y && apt-get install -y openssl
 WORKDIR /app
 RUN corepack enable
 
-# 1) deps: 전체 workspace 의존성 설치 (dev 포함)
+# 1) deps: repo 전체 복사 후 install (workspace 구조 보장)
 FROM base AS deps
-COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
-COPY apps/api/package.json apps/api/package.json
-COPY packages ./packages
-RUN pnpm install
+COPY . .
+RUN pnpm install --frozen-lockfile
 
 # 2) build
 FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app /app
 
-# 🔥 핵심: api 디렉토리로 이동해서 prisma 실행
 WORKDIR /app/apps/api
-RUN pnpm prisma:generate --schema=./prisma/schema.prisma
+RUN pnpm exec prisma generate --schema=./prisma/schema.prisma
 RUN pnpm build:prod
 
 # 3) runtime
