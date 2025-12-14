@@ -24,6 +24,9 @@ RUN pnpm build:prod
 
 # ✅ 배포용 아웃풋 생성 (prod deps만 포함된 "진짜" node_modules)
 WORKDIR /app
+# build stage 안에서
+RUN npm i -g typescript
+# 또는: RUN corepack enable && pnpm add -g typescript  (npm이 더 단순)
 RUN pnpm --filter @ricepay/api deploy --prod /out
 
 FROM node:22-bookworm-slim AS runner
