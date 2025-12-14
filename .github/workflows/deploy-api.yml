@@ -55,12 +55,12 @@ jobs:
 
   # ✅ 선택(자동배포): SSM으로 EC2에서 /opt/ricepay/deploy.sh 실행
   # 사용하려면:
-  # 1) .env에 EC2_INSTANCE_ID 추가 (값: i-056f66e12d8468d78)
+  # 1) GitHub Secrets에 EC2_INSTANCE_ID 추가 (값: i-056f66e12d8468d78)
   # 2) ricepay-github-actions-role에 ssm:SendCommand 권한 추가
   deploy-ec2:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: ${{ needs.build-and-push.result == 'success' && env.EC2_INSTANCE_ID != '' }}
+    if: ${{ needs.build-and-push.result == 'success' }}
 
     steps:
       - name: Configure AWS credentials (OIDC)
@@ -70,10 +70,15 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy via SSM
+        if: ${{ secrets.EC2_INSTANCE_ID != '' }}
         run: |
           aws ssm send-command \
-            --instance-ids "${{ env.EC2_INSTANCE_ID }}" \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy ricepay-api from ECR" \
             --parameters commands="sudo /opt/ricepay/deploy.sh" \
             --timeout-seconds 600
+
+      - name: Skip deploy (no EC2_INSTANCE_ID)
+        if: ${{ secrets.EC2_INSTANCE_ID == '' }}
+        run: echo "EC2_INSTANCE_ID is empty. Skipping deploy."
