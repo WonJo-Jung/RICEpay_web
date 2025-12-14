@@ -69,16 +69,19 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy via SSM
-        if: ${{ secrets.EC2_INSTANCE_ID != '' }}
+      - name: Deploy via SSM (skip if no instance id)
+        env:
+          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
         run: |
+          set -euo pipefail
+          if [ -z "${EC2_INSTANCE_ID:-}" ]; then
+            echo "EC2_INSTANCE_ID is empty. Skipping deploy."
+            exit 0
+          fi
+
           aws ssm send-command \
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --instance-ids "$EC2_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy ricepay-api from ECR" \
             --parameters commands="sudo /opt/ricepay/deploy.sh" \
             --timeout-seconds 600
-
-      - name: Skip deploy (no EC2_INSTANCE_ID)
-        if: ${{ secrets.EC2_INSTANCE_ID == '' }}
-        run: echo "EC2_INSTANCE_ID is empty. Skipping deploy."
