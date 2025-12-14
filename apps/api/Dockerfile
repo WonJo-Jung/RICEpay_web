@@ -18,7 +18,7 @@ COPY . .
 
 # 🔥 핵심: api 디렉토리로 이동해서 prisma 실행
 WORKDIR /app/apps/api
-RUN pnpm prisma:generate
+RUN pnpm prisma:generate --schema=./prisma/schema.prisma
 RUN pnpm build:prod
 
 # 3) runtime
