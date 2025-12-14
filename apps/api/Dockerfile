@@ -16,7 +16,7 @@ COPY . .
 COPY --from=deps /repo/node_modules ./node_modules
 
 WORKDIR /repo/apps/api
-RUN pnpm prisma:generate --schema=./prisma/schema.prisma
+RUN pnpm exec prisma generate --schema=./prisma/schema.prisma
 RUN pnpm build:prod
 
 # ✅ 3) 런타임용으로 "api만" prod deps 포함해서 패키징
