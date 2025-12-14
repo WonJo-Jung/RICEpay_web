@@ -1,37 +1,32 @@
 FROM node:22-bookworm-slim AS base
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-WORKDIR /repo
+WORKDIR /app
 RUN corepack enable
 
-# 1) deps (workspace 설치 - dev 포함)
 FROM base AS deps
-COPY . .
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages ./packages
 RUN pnpm install --frozen-lockfile
 
-# 2) build
 FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-COPY --from=deps /repo/node_modules ./node_modules
 
-# (build stage에서)
-WORKDIR /repo
+# prisma + build (api 기준)
+WORKDIR /app/apps/api
+RUN pnpm prisma:generate --schema=./prisma/schema.prisma
+RUN pnpm build:prod
 
-# ✅ prisma는 루트에서 exec로 실행 (workspace bin 해석 확실)
-RUN pnpm -w exec prisma generate --schema=apps/api/prisma/schema.prisma
-
-# 빌드는 그대로 filter로
-RUN pnpm -w --filter @ricepay/api build:prod
-
-# ✅ 3) 런타임용으로 "api만" prod deps 포함해서 패키징
-WORKDIR /repo
+# ✅ 배포용 아웃풋 생성 (prod deps만 포함된 "진짜" node_modules)
+WORKDIR /app
 RUN pnpm --filter @ricepay/api deploy --prod /out
 
-# 4) runtime
 FROM node:22-bookworm-slim AS runner
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NODE_ENV=production
 
+# ✅ /out 안에는 package.json, node_modules, dist 등이 깔끔하게 들어있음
 COPY --from=build /out/ ./
 
 EXPOSE 4000
