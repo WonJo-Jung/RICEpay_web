@@ -15,9 +15,14 @@ FROM base AS build
 COPY . .
 COPY --from=deps /repo/node_modules ./node_modules
 
-WORKDIR /repo/apps/api
-RUN pnpm exec prisma generate --schema=./prisma/schema.prisma
-RUN pnpm build:prod
+# (build stage에서)
+WORKDIR /repo
+
+# ✅ prisma는 루트에서 exec로 실행 (workspace bin 해석 확실)
+RUN pnpm -w exec prisma generate --schema=apps/api/prisma/schema.prisma
+
+# 빌드는 그대로 filter로
+RUN pnpm -w --filter @ricepay/api build:prod
 
 # ✅ 3) 런타임용으로 "api만" prod deps 포함해서 패키징
 WORKDIR /repo
