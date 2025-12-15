@@ -30,7 +30,6 @@ export async function loadSsmEnv() {
       // SSM 파라미터 이름과 env 이름을 "동일하게" 맞췄으니까
       // 그냥 process.env[이름]에 그대로 박아주면 됨
       process.env[p.Name] = p.Value;
-      console.log(p.Value, process.env[p.Name]);
     }
   }
 
