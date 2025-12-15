@@ -1,7 +1,7 @@
 {
   "name": "ricepay-mono",
   "private": true,
-  "packageManager": "pnpm@9.1.0",
+  "packageManager": "pnpm@10.24.0",
   "version": "0.1.0",
   "scripts": {
     "build": "turbo build",
@@ -25,7 +25,20 @@
           "rxjs": "^7.8.1"
         }
       }
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "@reown/appkit",
+      "bufferutil",
+      "esbuild",
+      "keccak",
+      "msgpackr-extract",
+      "prisma",
+      "sharp",
+      "utf-8-validate"
+    ]
   },
   "workspaces": [
     "apps/*",

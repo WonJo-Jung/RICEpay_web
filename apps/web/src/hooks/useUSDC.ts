@@ -27,6 +27,7 @@ export function useUSDC({ setTxState }: { setTxState: Dispatch<SetStateAction<{}
         address: USDC,
         functionName: 'balanceOf',
         args: [addr ?? address!],
+        authorizationList: [],
       })
       const wei = await publicClient.getBalance({ address });
       return [formatUnits(bal as bigint, DECIMALS), formatEther(wei)];

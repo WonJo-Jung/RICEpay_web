@@ -5,7 +5,9 @@
     "module": "CommonJS",
     "experimentalDecorators": true, // legacy decorator 사용
     "emitDecoratorMetadata": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "moduleResolution": "node",
+    "types": ["node"]
   },
   "include": ["src"]
 }

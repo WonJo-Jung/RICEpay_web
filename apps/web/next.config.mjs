@@ -7,6 +7,7 @@ const nextConfig = {
       'pino-pretty': false,
       'pino-abstract-transport': false,
       'sonic-boom': false,
+      '@react-native-async-storage/async-storage': false,
     };
     return config;
   },

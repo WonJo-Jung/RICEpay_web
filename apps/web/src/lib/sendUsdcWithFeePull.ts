@@ -34,8 +34,8 @@ export async function sendUsdcWithFeePull(
 
   // 0) 잔액/알로우언스 확인
   const [bal, alw] = await Promise.all([
-    publicClient.readContract({ address: usdc, abi: erc20Abi, functionName: 'balanceOf', args: [owner] }),
-    publicClient.readContract({ address: usdc, abi: erc20Abi, functionName: 'allowance', args: [owner, rpt] }),
+    publicClient.readContract({ address: usdc, abi: erc20Abi, functionName: 'balanceOf', args: [owner], authorizationList: [] }),
+    publicClient.readContract({ address: usdc, abi: erc20Abi, functionName: 'allowance', args: [owner, rpt], authorizationList: [] }),
   ]);
 
   // console.table({
@@ -59,6 +59,7 @@ export async function sendUsdcWithFeePull(
       abi: RPT_ABI as Abi,
       functionName: 'quote',
       args: [amount6],
+      authorizationList: [],
     }) as [bigint, bigint];
 
     if (fee > amount6) {
