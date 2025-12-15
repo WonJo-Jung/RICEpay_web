@@ -1,0 +1,9 @@
+[build]
+  command = "next build"
+  publish = "apps/web/out"
+
+[functions]
+  node_bundler = "esbuild"
+
+[build.environment]
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
