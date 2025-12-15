@@ -1,6 +1,6 @@
 [build]
   command = "next build"
-  publish = "apps/web/out"
+  publish = "apps/web/.next"
 
 [functions]
   node_bundler = "esbuild"
