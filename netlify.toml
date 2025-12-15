@@ -1,7 +1,4 @@
 [build]
   base = "apps/web"
   command = "next build"
-  publish = "/apps/web/out"
-
-[build.environment]
-  NETLIFY_NEXT_PLUGIN_SKIP = "true"
+  publish = ".next"
