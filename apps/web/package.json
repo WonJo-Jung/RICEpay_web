@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev -p 3000",
+    "build": "next build",
     "build:dev": "dotenv -e .env.dev -- next build",
     "start:dev": "dotenv -e .env.dev -- next start -p 3000",
     "build:prod": "dotenv -e .env.prod -- next build",
