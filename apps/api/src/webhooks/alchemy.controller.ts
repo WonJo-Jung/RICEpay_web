@@ -29,17 +29,11 @@ export class AlchemyWebhookController {
     const secret = process.env.ALCHEMY_WEBHOOK_SECRET!;
     const raw = req.rawBody; // ✅ raw 그대로 (toString 금지)
     if (!verifyAlchemySignature(raw, signature, secret)) {
-      console.log("1")
-      console.log('bad signature');
       throw new UnauthorizedException('Bad signature');
     }
 
     // 1) 해시 수집 (Address Activity / Mined Tx / 기타)
     const hashes = extractHashes(payload);
-    console.log("2")
-    console.log(hashes);
-    console.log(payload);
-    console.log(payload.event.activity)
     if (hashes.length === 0) {
       return { ok: true, reason: 'no-hash-in-payload' };
     }
@@ -49,8 +43,6 @@ export class AlchemyWebhookController {
     let { blockNumber, confirmations, eventId } = extractMeta(payload);
 
     // 3) 컨펌 수가 없고, 블록번호가 있으면 계산(확정 시 1+)
-    console.log("3");
-    console.log(status, blockNumber, confirmations);
     if (status === 'CONFIRMED' && blockNumber != null && confirmations == null) {
       try {
         const publicClient = createPublicClient({
@@ -78,8 +70,6 @@ export class AlchemyWebhookController {
         where: { txHash: h },
       });
 
-      console.log("4");
-      console.log(fresh, actsForHash, status);
       if (fresh && actsForHash.length > 0 && status === 'CONFIRMED') {
         const { id, txHash } = fresh;
 
