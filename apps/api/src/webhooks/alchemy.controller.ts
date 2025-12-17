@@ -39,6 +39,7 @@ export class AlchemyWebhookController {
     console.log("2")
     console.log(hashes);
     console.log(payload);
+    console.log(payload.event.activity)
     if (hashes.length === 0) {
       return { ok: true, reason: 'no-hash-in-payload' };
     }
