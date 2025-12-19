@@ -9,8 +9,6 @@ export class DevicesController {
 
   @Post('register')
   async register(@Body() dto: RegisterDeviceDto) {
-    console.log('Registering device:');
-    console.log(dto.platform, dto.pushToken, dto.wallet);
     await this.devicesService.register(dto);
     return { ok: true };
   }
