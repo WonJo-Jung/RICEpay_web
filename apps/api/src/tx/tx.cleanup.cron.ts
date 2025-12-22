@@ -4,9 +4,9 @@ import { Chain, Client, createPublicClient, http, HttpTransport, PublicClient, T
 import { prisma } from '../lib/db';
 import { chains } from '../lib/viem';
 
-const CLEAN_CRON = process.env.TX_CLEAN_CRON ?? '0 3 * * *';
-const CLEAN_MAX = Number(process.env.TX_CLEAN_MAX ?? 200);
-const PENDING_MAX_MIN = Number(process.env.TX_CLEAN_PENDING_MAX_MINUTES ?? 60);
+const CLEAN_CRON = process.env.TX_CLEAN_CRON ?? '*/15 * * * *';
+const CLEAN_MAX = Number(process.env.TX_CLEAN_MAX ?? 20);
+const PENDING_MAX_MIN = Number(process.env.TX_CLEAN_PENDING_MAX_MINUTES ?? 30);
 type AnyPublicClient = Client<Transport, Chain>;
 
 // 상태 상수 (스키마는 String이므로 문자열 사용)
@@ -39,7 +39,7 @@ export class TxCleanupCron {
   private readonly log = new Logger(TxCleanupCron.name);
   private readonly clients = makeClients();
 
-  // 매일 03:00 (@Cron() 데코레이터는 node-cron 포맷 문자열을 지원하므로, 환경변수로 주입한 문자열을 그대로 넘기면 됨. 간단히 매일 3시에 고정)
+  // 매 15분마다 (@Cron() 데코레이터는 node-cron 포맷 문자열을 지원하므로, 환경변수로 주입한 문자열을 그대로 넘기면 됨.)
   @Cron(CLEAN_CRON)
   async cleanupStalePending() {
     this.log.log(`Start cleanup stale pending (max=${CLEAN_MAX}, age>=${PENDING_MAX_MIN}m)`);
