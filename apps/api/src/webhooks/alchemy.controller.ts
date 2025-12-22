@@ -70,29 +70,11 @@ export class AlchemyWebhookController {
         where: { txHash: h },
       });
 
-      if (fresh && actsForHash.length > 0 && status === 'CONFIRMED') {
-        const { id, txHash } = fresh;
+      // 2) + 3) + 4)
+      const { incoming, outgoingToUser, feeLeg } = realAct(actsForHash);
 
-        // 2) user -> RPT leg (전체 전송 금액)
-        const incoming = actsForHash.find(
-          (a) =>
-            a.toAddress?.toLowerCase() === RPT_ADDR &&
-            a.fromAddress?.toLowerCase() !== RPT_ADDR, // 자기 자신 제외
-        );
-
-        // 3) RPT -> 실제 수신자 leg (treasury 아닌 쪽)
-        const outgoingToUser = actsForHash.find(
-          (a) =>
-            a.fromAddress?.toLowerCase() === RPT_ADDR &&
-            a.toAddress?.toLowerCase() !== TREASURY_ADDR,
-        );
-
-        // 4) (선택) RPT -> treasury leg
-        const feeLeg = actsForHash.find(
-          (a) =>
-            a.fromAddress?.toLowerCase() === RPT_ADDR &&
-            a.toAddress?.toLowerCase() === TREASURY_ADDR,
-        );
+      if (fresh && status === 'CONFIRMED') {
+        const { id, txHash } = fresh;        
 
         // user -> RPT + RPT -> user 둘 다 있어야 우리가 원하는 Tx로 판단
         if (incoming && outgoingToUser) {
@@ -115,15 +97,17 @@ export class AlchemyWebhookController {
         }
       }
 
-      await this.tx.applyWebhookUpdate({
-        chainId: chain.id,
-        eventId: eventId ?? `evt-${h}-${Date.now()}`,
-        txHash: h, // 소문자 정규화는 서비스에서 처리
-        status,
-        blockNumber: blockNumber ?? undefined,
-        confirmations: confirmations ?? undefined,
-        rawPayload: payload ?? undefined, // 크면 저장 안 함(원하면 payload 넣기)
-      });
+      if (incoming) {
+        await this.tx.applyWebhookUpdate({
+          chainId: chain.id,
+          eventId: eventId ?? `evt-${h}-${Date.now()}`,
+          txHash: h, // 소문자 정규화는 서비스에서 처리
+          status,
+          blockNumber: blockNumber ?? undefined,
+          confirmations: confirmations ?? undefined,
+          rawPayload: payload ?? undefined, // 크면 저장 안 함(원하면 payload 넣기)
+        });
+      }
     }
 
     // ✅ Nest 기본 201이 아니라 200으로 내려가도록
@@ -184,4 +168,29 @@ function extractStatus(p: any): 'CONFIRMED' | 'FAILED' | 'DROPPED_REPLACED' {
   const tx = p?.event?.transaction ?? p?.transaction ?? p?.data?.transaction;
   if (tx?.status === 'failed' || p?.status === 'failed') return 'FAILED';
   return 'CONFIRMED';
+}
+
+function realAct(actsForHash: any[]) {
+  // 2) user -> RPT leg (전체 전송 금액)
+  const incoming = actsForHash.find(
+    (a) =>
+      a.toAddress?.toLowerCase() === RPT_ADDR &&
+      a.fromAddress?.toLowerCase() !== RPT_ADDR, // 자기 자신 제외
+  );
+
+  // 3) RPT -> 실제 수신자 leg (treasury 아닌 쪽)
+  const outgoingToUser = actsForHash.find(
+    (a) =>
+      a.fromAddress?.toLowerCase() === RPT_ADDR &&
+      a.toAddress?.toLowerCase() !== TREASURY_ADDR,
+  );
+
+  // 4) (선택) RPT -> treasury leg
+  const feeLeg = actsForHash.find(
+    (a) =>
+      a.fromAddress?.toLowerCase() === RPT_ADDR &&
+      a.toAddress?.toLowerCase() === TREASURY_ADDR,
+  );
+
+  return { incoming, outgoingToUser, feeLeg };
 }
