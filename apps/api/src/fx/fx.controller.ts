@@ -27,7 +27,7 @@ export class FxController {
     return {
       base: r.base, quote: r.quote, rate: r.rate,
       asOf: r.asOf.toISOString(), source: r.source, stale: !!r.stale,
-      ttlSeconds: Number(process.env.FX_TTL_SECONDS ?? 60),
+      ttlSeconds: Number(process.env.FX_TTL_SECONDS ?? 3600),
       disclaimer: 'Indicative only. Not an offer or execution rate.',
     };
   }

@@ -9,7 +9,7 @@ import { OxrProvider } from './providers/oxr.provider';
 
 @Injectable()
 export class FxService {
-  private ttlMs = Number(process.env.FX_TTL_SECONDS ?? 60) * 1000;
+  private ttlMs = Number(process.env.FX_TTL_SECONDS ?? 3600) * 1000;
   constructor(
     @Inject(CACHE_MANAGER) private cache: Cache,
     private cfg: ConfigService,

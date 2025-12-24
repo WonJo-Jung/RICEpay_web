@@ -12,6 +12,7 @@ export class ComplianceController {
     if (process.env.COMPLIANCE_ENABLED !== 'true') return { ok: true };
 
     const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '').trim();
+    console.log(ip);
 
     if (process.env.GEOFENCE_ENABLED === 'true') {
       const g = await this.geo.check(req.headers, ip);

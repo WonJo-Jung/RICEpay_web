@@ -73,6 +73,7 @@ export function extractGeoFromHeaders(
   opts?: { countryHeader?: string; regionHeader?: string }
 ): GeoResult {
   const h2 = normalizeHeaderKeys(headers);
+  console.log(h2);
 
   // 기본 헤더 키
   const countryKey = (opts?.countryHeader || process.env.CF_HEADER_COUNTRY || 'cf-ipcountry').toLowerCase();
@@ -157,7 +158,7 @@ export async function lookupIpregistry(ip: string): Promise<IpInfo | null> {
 
     const client: IpregistryClient = new IpregistryClient(key)
     const res: ApiResponse<IpInfo> =
-      await client.lookupIp("180.64.206.16", IpregistryOptions.hostname(true));
+      await client.lookupIp(process.env.NODE_ENV === "production" ? ip : "180.64.206.16", IpregistryOptions.hostname(true));
     clearTimeout(to);
 
     if (!res || !res.data) {
