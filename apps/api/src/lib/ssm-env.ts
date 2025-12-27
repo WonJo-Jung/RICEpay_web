@@ -5,6 +5,7 @@ const REGION = process.env.AWS_REGION || 'us-east-1';
 
 // SSM에 저장한 "이름 그대로" 적기
 const PARAM_KEYS = [
+  'ALCHEMY_API_KEY',
   'ALCHEMY_AUTH_TOKEN',
   'ALCHEMY_WEBHOOK_ID',
   'ALCHEMY_WEBHOOK_SECRET',
