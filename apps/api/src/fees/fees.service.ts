@@ -5,6 +5,7 @@ import { createPublicClient, http, encodeFunctionData } from 'viem';
 import { PreviewDto } from './preview.dto';
 import { calcFeeUsd, readPolicy, tokenIntToUsd, usdToTokenIntCeil } from './fee-policy.util';
 import { chains } from '../lib/viem';
+import { PricesService } from '../prices/prices.service';
 
 const USDC_ABI = [
   { "type":"function","name":"transfer","stateMutability":"nonpayable",
@@ -18,15 +19,16 @@ const DECIMALS = 6;
 
 @Injectable()
 export class FeesService {
-  constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
+  constructor(@Inject(CACHE_MANAGER) private cache: Cache, private readonly pricesService: PricesService) {}
 
   private policy = readPolicy();
 
   private async quotes() {
+    const { source, prices } = await this.pricesService.getUsdPrices();
     return {
-      usdcUsd: Number(process.env.FIXED_USDC_USD ?? 1.0),
-      nativeUsd: Number(process.env.FIXED_ETH_USD ?? 2580),
-      source: 'fixed',
+      usdcUsd: prices['USDC'].usd,
+      nativeUsd: prices['ETH'].usd,
+      source,
     };
   }
 
@@ -107,7 +109,7 @@ export class FeesService {
     const gasUsd = (Number(gasNativeWei) / 1e18) * nativeUsd;
 
     const feeUsd = await this.fee(amountInt);
-    const feeInt = usdToTokenIntCeil(feeUsd, usdcUsd, DECIMALS);
+    const feeInt = usdToTokenIntCeil(feeUsd, DECIMALS);
 
     const receiver = amountInt - feeInt;
 

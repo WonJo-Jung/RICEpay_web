@@ -1,5 +1,5 @@
 // notifications.controller.ts
-import { Controller, Get, Param, Patch, Body, Query } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 
 @Controller('notifications')

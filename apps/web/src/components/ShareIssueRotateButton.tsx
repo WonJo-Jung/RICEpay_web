@@ -129,7 +129,7 @@ export default function ShareIssueRotateButton({ id }: { id: string }) {
     if (navigator.share) {
       try {
         await navigator.share({
-          text: `RicePay 공유 영수증 링크입니다\n${shareUrl}`,
+          text: `RICE Pay 공유 영수증 링크입니다\n${shareUrl}`,
         });
       } catch (err) {
         // 사용자가 share sheet 닫거나 취소해도 에러로 잡히므로 조용히 무시

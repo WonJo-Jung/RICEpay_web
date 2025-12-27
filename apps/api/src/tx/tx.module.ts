@@ -13,6 +13,7 @@ import { FxModule } from '../fx/fx.module';
 import { ReceiptModule } from '../receipt/receipt.module';
 import { ComplianceModule } from '../compliance/compliance.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PricesModule } from '../prices/prices.module';
 
 /**
  * TxModule
@@ -26,7 +27,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
  *    프라이빗 키나 송금 집행은 일절 하지 않음.
  */
 @Module({
-  imports: [FxModule, ScheduleModule, ReceiptModule, ComplianceModule, NotificationsModule],
+  imports: [FxModule, ScheduleModule, ReceiptModule, ComplianceModule, NotificationsModule, PricesModule],
   providers: [TxService, TxStream, TxCron, TxCleanupCron, MaintenanceGuard, FeesService],
   controllers: [TxController, TxReindexController, TxCleanupController],
   exports: [TxService, TxStream],

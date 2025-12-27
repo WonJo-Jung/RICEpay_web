@@ -7,6 +7,7 @@ import { FeesService } from '../fees/fees.service';
 import { prisma } from '../lib/db';
 import { chains } from '../lib/viem';
 import { IpInfo } from '@ipregistry/client';
+import { PricesService } from '../prices/prices.service';
 
 const norm = (h: string) => h.toLowerCase() as `0x${string}`;
 
@@ -17,6 +18,7 @@ export class TxService {
     private fx: FxService,                // DEV-05
     private fees: FeesService,            // DEV-06
     private receipts: ReceiptService,     // DEV-09
+    private readonly prices: PricesService,
   ) {}
 
   async upsertPending(dto: {
@@ -72,6 +74,7 @@ export class TxService {
           const rateUsd = await this.fx.get('USD', currency.code);
           const policyVersion = this.fees.currentPolicyVersion();
           const feeUsd = await this.fees.fee(BigInt(Math.round(Number(amount) * 1e6)));
+          const { prices } = await this.prices.getUsdPrices();
 
           await this.receipts.createSnapshot({
             transactionId: tx.id,
@@ -85,7 +88,7 @@ export class TxService {
             quoteCurrency: currency.code,
             fiatRate: String(rateUsd.rate),
             gasPaid: gasPaid,
-            gasFiatAmount: String(Number(gasPaid) * Number(process.env.FIXED_ETH_USD ?? 2580) * rateUsd.rate),
+            gasFiatAmount: String(Number(gasPaid) * prices['ETH'].usd * rateUsd.rate),
             appFee: String(feeUsd),
             appFeeFiat: String(feeUsd * rateUsd.rate),
             policyVersion,

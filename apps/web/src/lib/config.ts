@@ -1,1 +1,1 @@
-export const fxTtlSeconds = Number(process.env.NEXT_PUBLIC_FX_TTL_SECONDS ?? 60);
+export const fxTtlSeconds = Number(process.env.NEXT_PUBLIC_FX_TTL_SECONDS ?? 3600);

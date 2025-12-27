@@ -12,10 +12,8 @@ export const calcFeeUsd = (sendUsd: number, p: FeePolicy) =>
   Math.min(Math.max(sendUsd * p.pct, p.minUsd), p.maxUsd);
 
 // USD → 토큰 정수(ceil)
-export const usdToTokenIntCeil = (feeUsd: number, tokenUsd: number, decimals: number): bigint => {
-  const raw = feeUsd / tokenUsd; // USDC는 1.0 가정
-  return BigInt(Math.ceil(raw * Number(ONE(decimals))));
-};
+export const usdToTokenIntCeil = (feeUsd: number, decimals: number): bigint =>
+  BigInt(Math.ceil(feeUsd * Number(ONE(decimals))));
 
 // 토큰 정수 → USD
 export const tokenIntToUsd = (amountInt: bigint, tokenUsd: number, decimals: number) =>

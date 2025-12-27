@@ -97,7 +97,7 @@ export default function FxCard({ initialData }: Props) {
           {isValidating ? "Updating…" : "↻ Refresh"}
         </button>
         <span className="text-[11px] text-gray-400">
-          auto: {d.ttlSeconds ?? fxTtlSeconds}s
+          auto: {(d.ttlSeconds ?? fxTtlSeconds) / 3600}h
         </span>
       </div>
     </div>

@@ -47,7 +47,7 @@ export class AlchemyWebhookController {
       try {
         const publicClient = createPublicClient({
           chain,
-          transport: http(process.env.CHAIN_RPC!),
+          transport: http(process.env.CHAIN_RPC + "/" + process.env.ALCHEMY_API_KEY),
         });
         const head = await publicClient.getBlockNumber();
         const computed = Number(head) - Number(blockNumber) + 1;
