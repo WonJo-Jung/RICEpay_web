@@ -157,7 +157,7 @@ export async function lookupIpregistry(ip: string): Promise<IpInfo | null> {
 
     const client: IpregistryClient = new IpregistryClient(key)
     const res: ApiResponse<IpInfo> =
-      await client.lookupIp("180.64.206.16", IpregistryOptions.hostname(true));
+      await client.lookupIp(ip, IpregistryOptions.hostname(true)); // 180.64.206.16
     clearTimeout(to);
 
     if (!res || !res.data) {
