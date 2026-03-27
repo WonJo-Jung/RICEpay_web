@@ -71,6 +71,9 @@ export class AlchemyWebhookController {
       });
 
       // 2) + 3) + 4)
+      console.log(actsForHash)
+      console.log(RPT_ADDR)
+      console.log(TREASURY_ADDR)
       const { incoming, outgoingToUser, feeLeg } = realAct(actsForHash);
 
       if (fresh && status === 'CONFIRMED') {
